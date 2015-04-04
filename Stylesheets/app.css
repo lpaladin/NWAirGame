@@ -1,0 +1,168 @@
+﻿html, body {
+    font-family: 'Microsoft YaHei' SimHei 'Courier New' Arial !important;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: default;
+}
+
+#bkg {
+    background-image: url('../Images/bkg.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat no-repeat;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: -1;
+}
+
+#gameDisplay {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+}
+
+#panPlayControl, #panMessage {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    z-index: 9999;
+}
+
+section {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+div.centered {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    -moz-transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
+    -o-transform: translate(-50%, -50%);
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    text-align: center !important;
+}
+
+div#dTitle {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    -moz-transform: translateY(-50%) rotateY(180deg);
+    -ms-transform: translateY(-50%) rotateY(180deg);
+    -o-transform: translateY(-50%) rotateY(180deg);
+    -webkit-transform: translateY(-50%) rotateY(180deg);
+    transform: translateY(-50%) rotateY(180deg);
+    padding: 20px;
+    text-align: right !important;
+}
+
+#dIntro {
+    background-color: black;
+    color: white;
+}
+
+#dGameMenu ul.hl-style-menu {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    padding: 20px;
+    list-style: none;
+}
+
+ul.hl-style-menu li {
+    color: #ddd;
+    font-weight: bold;
+    margin: 5px 10px;
+}
+
+    ul.hl-style-menu li:hover {
+        color: #fff;
+    }
+
+ul#lstMessages {
+    list-style: none;
+    margin: 0;
+}
+
+    ul#lstMessages li {
+        margin: 0;
+        padding: 5px 10px;
+        color: black;
+    }
+
+.msg-info {
+    background-color: lightblue;
+    border: 1px solid dodgerblue;
+}
+
+.msg-warning {
+    background-color: lightyellow;
+    border: 1px solid greenyellow;
+}
+
+.msg-error {
+    background-color: lightpink;
+    border: 1px solid indianred;
+}
+
+.msg-info span.glyphicon {
+    color: dodgerblue;
+}
+
+.msg-warning span.glyphicon {
+    color: greenyellow;
+}
+
+.msg-error span.glyphicon {
+    color: indianred;
+}
+
+#dlgModal {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+    #dlgModal .dialog-body {
+        position: absolute;
+        background-color: rgba(105, 105, 105, 0.8);
+        width: auto;
+        border-radius: 5px;
+        color: white;
+        text-align: center;
+        padding: 10px 15px 5px 15px;
+    }
+
+        #dlgModal .dialog-body header {
+            font-weight: bold;
+            font-size: medium;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+
+button.classic {
+    background-color: ThreeDFace;
+    color: white;
+    cursor: default;
+    outline: none;
+    padding: 1px 10px;
+    -moz-box-sizing: content-box;
+    -webkit-box-sizing: content-box;
+    box-sizing: content-box;
+}
+
+button.classic:active {
+    padding: 2px 9px 0 11px;
+}
