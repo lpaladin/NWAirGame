@@ -1,10 +1,21 @@
 ﻿html, body {
-    font-family: 'Microsoft YaHei' SimHei 'Courier New' Arial !important;
+    font-family: 'Microsoft YaHei', SimHei, 'Courier New', Arial !important;
     -moz-user-select: none;
     -ms-user-select: none;
     -webkit-user-select: none;
     user-select: none;
     cursor: default;
+    color: white;
+}
+
+ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+a[href] {
+    cursor: pointer;
 }
 
 #bkg {
@@ -29,6 +40,10 @@
     z-index: 1;
 }
 
+#dCredits {
+    background-color: black;
+}
+
 #panPlayControl, #panMessage {
     position: absolute;
     right: 0;
@@ -45,7 +60,7 @@ section {
     right: 0;
 }
 
-div.centered {
+.centered {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -60,19 +75,31 @@ div.centered {
 div#dTitle {
     position: absolute;
     top: 50%;
-    left: 0;
-    -moz-transform: translateY(-50%) rotateY(180deg);
-    -ms-transform: translateY(-50%) rotateY(180deg);
-    -o-transform: translateY(-50%) rotateY(180deg);
-    -webkit-transform: translateY(-50%) rotateY(180deg);
-    transform: translateY(-50%) rotateY(180deg);
+    right: 0;
+    -moz-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    -o-transform: translateY(-50%);
+    -webkit-transform: translateY(-50%);
+    transform: translateY(-50%);
     padding: 20px;
     text-align: right !important;
 }
 
+div#dTitle h1 {
+    font-size: 4em;
+    font-weight: bold;
+}
+
+div#dTitle h2 {
+    font-size: 2em;
+}
+
 #dIntro {
     background-color: black;
-    color: white;
+}
+
+#dGameMenu {
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 #dGameMenu ul.hl-style-menu {
@@ -80,21 +107,20 @@ div#dTitle {
     bottom: 0;
     left: 0;
     padding: 20px;
-    list-style: none;
 }
 
 ul.hl-style-menu li {
+    display: none;
     color: #ddd;
     font-weight: bold;
     margin: 5px 10px;
 }
 
-    ul.hl-style-menu li:hover {
+    ul.hl-style-menu li:hover, ul.hl-style-menu li.hover {
         color: #fff;
     }
 
 ul#lstMessages {
-    list-style: none;
     margin: 0;
 }
 
@@ -135,34 +161,395 @@ ul#lstMessages {
     background-color: rgba(0, 0, 0, 0.3);
 }
 
-    #dlgModal .dialog-body {
-        position: absolute;
-        background-color: rgba(105, 105, 105, 0.8);
-        width: auto;
-        border-radius: 5px;
-        color: white;
-        text-align: center;
-        padding: 10px 15px 5px 15px;
-    }
+.dialog-body {
+    position: absolute;
+    background-color: rgba(105, 105, 105, 0.8);
+    width: auto;
+    border-radius: 5px;
+    text-align: center;
+    padding: 10px 15px 5px 15px;
+    left: 10%;
+    top: 10%;
+}
 
-        #dlgModal .dialog-body header {
-            font-weight: bold;
-            font-size: medium;
-            margin-bottom: 10px;
-            text-align: left;
-        }
+    .dialog-body header {
+        font-weight: bold;
+        font-size: medium;
+        margin-bottom: 10px;
+        text-align: left;
+    }
 
 button.classic {
     background-color: ThreeDFace;
     color: white;
     cursor: default;
     outline: none;
-    padding: 1px 10px;
+    padding: 2px 10px;
     -moz-box-sizing: content-box;
     -webkit-box-sizing: content-box;
     box-sizing: content-box;
 }
 
 button.classic:active {
-    padding: 2px 9px 0 11px;
+    padding: 3px 9px 1px 11px;
+}
+
+.save-list {
+    border: inset;
+    overflow-y: scroll;
+    width: 300px;
+    height: 65vh;
+    margin-bottom: 5px;
+}
+
+    .save-list li {
+        height: 90px;
+        -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        text-align: left;
+        -moz-transition: all ease-out 0.2s;
+        -o-transition: all ease-out 0.2s;
+        -webkit-transition: all ease-out 0.2s;
+        transition: all ease-out 0.2s;
+    }
+
+    .save-list li img {
+        -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        height: 70px;
+        width: 100px;
+        margin: 10px;
+        float: left;
+        border: 3px solid gray;
+    }
+
+    .save-list li > div {
+        float: left;
+        margin: 10px 0;
+    }
+
+    .save-list li > div p.title {
+        font-weight: bold;
+    }
+
+.save-list li.active {
+    background-color: rgba(220, 220, 220, 0.8);
+    color: black;
+}
+
+    .save-list li.active img {
+        border: 3px solid orange;
+    }
+
+#dLoading div {
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+    -moz-perspective: 1000;
+    -ms-perspective: 1000;
+    -webkit-perspective: 1000;
+    perspective: 1000;
+    margin-left: -25px;
+    opacity: 0.5;
+}
+
+#dLoading span.glyphicon {
+    position: absolute;
+    font-size: 50px;
+}
+
+#dLoading header {
+    font-size: 3em;
+}
+
+#dLoading header span {
+    display: inline-block;
+}
+
+/*
+text-shadow originated from: http://codepen.io/zitrusfrisch
+*/
+.superShadow {
+  text-shadow:     0 1px 0 hsl(174,5%,80%),
+                     0 2px 0 hsl(174,5%,75%),
+                     0 3px 0 hsl(174,5%,70%),
+                     0 4px 0 hsl(174,5%,66%),
+                     0 5px 0 hsl(174,5%,64%),
+                     0 6px 0 hsl(174,5%,62%),
+                     0 7px 0 hsl(174,5%,61%),
+                     0 8px 0 hsl(174,5%,60%),
+    
+                     0 0 5px rgba(0,0,0,.05),
+                    0 1px 3px rgba(0,0,0,.2),
+                    0 3px 5px rgba(0,0,0,.2),
+                   0 5px 10px rgba(0,0,0,.2),
+                  0 10px 10px rgba(0,0,0,.2),
+                  0 20px 20px rgba(0,0,0,.3);
+}
+
+#dGameMain {
+    background-color: white;
+    display: table;
+    height: 100%;
+    width: 100%;
+}
+
+#dGameMain > div {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
+    color: black;
+}
+
+#dStatusInfo {
+    position: relative;
+    width: 25vw;
+    background-color: lightgray;
+    border-left: 2px solid gray;
+}
+
+#dMapView {
+    -moz-perspective: 1000;
+    -ms-perspective: 1000;
+    -webkit-perspective: 1000;
+    perspective: 1000;
+}
+
+#dMapView .dirctrl.top {
+    position: absolute;
+    top: 0;
+    height: 10%;
+    left: 10%;
+    right: 10%;
+}
+
+#dMapView .dirctrl.bottom {
+    position: absolute;
+    bottom: 0;
+    height: 10%;
+    left: 10%;
+    right: 10%;
+}
+
+#dMapView .dirctrl.left {
+    position: absolute;
+    top: 0;
+    width: 10%;
+    bottom: 0;
+    left: 0;
+}
+
+#dMapView .dirctrl.right {
+    position: absolute;
+    top: 0;
+    width: 10%;
+    bottom: 0;
+    right: 0;
+}
+
+#dMapView .dirctrl:hover {
+    background-color: rgba(127, 127, 127, 0.2)
+}
+
+    #dMapView aside {
+        pointer-events: none;
+        position: absolute;
+        width: auto;
+        -moz-transform-origin: left bottom;
+        -ms-transform-origin: left bottom;
+        -o-transform-origin: left bottom;
+        -webkit-transform-origin: left bottom;
+        transform-origin: left bottom;
+        border: 2px solid gray;
+        background-color: rgba(200, 200, 200, 0.5);
+        border-radius: 2px;
+        padding: 10px;
+        display: none;
+    }
+
+#dMapOuter {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+    -moz-transform-origin: bottom center;
+    -ms-transform-origin: bottom center;
+    -o-transform-origin: bottom center;
+    -webkit-transform-origin: bottom center;
+    transform-origin: bottom center;
+}
+
+#dMapInner {
+    white-space: nowrap;
+    display: inline-block;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+}
+
+.hexagon {
+    width: 55px;
+    height: 96px;
+    position: relative;
+    margin: 5px;
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+}
+
+.hex-col-odd, .hex-col-even {
+    margin-left: 22.5px;
+    display: inline-block;
+}
+
+.hex-col-even {
+    margin-bottom: 50px;
+}
+
+.hexagon em {
+    width: 55px;
+    height: 96px;
+    display: block;
+    position: absolute;
+    z-index: 3;
+}
+
+.hexagon b.glyphicon {
+    position: absolute;
+    -moz-transform-origin: bottom center;
+    -ms-transform-origin: bottom center;
+    -o-transform-origin: bottom center;
+    -webkit-transform-origin: bottom center;
+    transform-origin: bottom center;
+    opacity: 0.5;
+    color: gray;
+    font-size: 40px;
+    z-index: 4;
+    bottom: 0;
+    top: initial;
+    -moz-animation: foggy 8s linear infinite alternate;
+    -o-animation: foggy 8s linear infinite alternate;
+    -webkit-animation: foggy 8s linear infinite alternate;
+    animation: foggy 8s linear infinite alternate;
+}
+
+#dGameMain.paused .hexagon b.glyphicon {
+    -moz-animation-play-state: paused;
+    -o-animation-play-state: paused;
+    -webkit-animation-play-state: paused;
+    animation-play-state: paused;
+} 
+
+.hexagon b.glyphicon:last-of-type {
+    bottom: 10%;
+    -moz-animation: foggy 9s linear 1s infinite alternate;
+    -o-animation: foggy 9s linear 1s infinite alternate;
+    -webkit-animation: foggy 9s linear 1s infinite alternate;
+    animation: foggy 9s linear 1s infinite alternate;
+}
+
+@-webkit-keyframes foggy {
+    0% {
+        -moz-transform: scale(1.1) translateX(0) rotateX(-60deg);
+        -ms-transform: scale(1.1) translateX(0) rotateX(-60deg);
+        -o-transform: scale(1.1) translateX(0) rotateX(-60deg);
+        -webkit-transform: scale(1.1) translateX(0) rotateX(-60deg);
+        transform: scale(1.1) translateX(0) rotateX(-60deg);
+    }
+
+    50% {
+        -moz-transform: scale(1.05) translateX(-50%) rotateX(-45deg);
+        -ms-transform: scale(1.05) translateX(-50%) rotateX(-45deg);
+        -o-transform: scale(1.05) translateX(-50%) rotateX(-45deg);
+        -webkit-transform: scale(1.05) translateX(-50%) rotateX(-45deg);
+        transform: scale(1.05) translateX(-50%) rotateX(-45deg);
+    }
+
+    100% {
+        -moz-transform: scale(1) translateX(0) rotateX(-30deg);
+        -ms-transform: scale(1) translateX(0) rotateX(-30deg);
+        -o-transform: scale(1) translateX(0) rotateX(-30deg);
+        -webkit-transform: scale(1) translateX(0) rotateX(-30deg);
+        transform: scale(1) translateX(0) rotateX(-30deg);
+    }
+}
+
+.hexagon span {
+    -moz-transform: rotateX(-90deg);
+    -ms-transform: rotateX(-90deg);
+    -o-transform: rotateX(-90deg);
+    -webkit-transform: rotateX(-90deg);
+    transform: rotateX(-90deg);
+    position: absolute;
+    display: block;
+    z-index: 4;
+    bottom: 50%;
+    left: 0;
+    right: 0;
+    -moz-transform-origin: bottom center;
+    -ms-transform-origin: bottom center;
+    -o-transform-origin: bottom center;
+    -webkit-transform-origin: bottom center;
+    transform-origin: bottom center;
+}
+
+.hexagon span img {
+    max-height: 100%;
+    max-width: 100%;
+}
+
+.hexagon, .hexagon:before, .hexagon:after, .hexagon em {
+    background-color: lightgreen;
+}
+
+    .hexagon:before, .hexagon:after {
+        content: "";
+        position: absolute;
+        top: 24px;
+        width: 55px;
+        height: 48px;
+        -moz-transform: rotate(60deg) skew(30deg);
+        -webkit-transform: rotate(60deg) skew(30deg);
+        -ms-transform: rotate(60deg) skew(30deg);
+        -o-transform: rotate(60deg) skew(30deg);
+        transform: rotate(60deg) skew(30deg);
+    }
+
+.hexagon:before {
+    left: -27.5px;
+}
+
+.hexagon:after {
+    right: -27.5px;
+}
+
+.hexagon.glow, .hexagon.glow:before, .hexagon.glow:after {
+    box-shadow: green 0 0 10px;
+}
+
+.hexagon.glow.blur, .hexagon.glow.blur:before, .hexagon.glow.blur:after {
+    box-shadow: green 0 0 15px,
+        lightgreen 0 0 20px;
+}
+
+.hexagon.active, .hexagon.active:before, .hexagon.active:after {
+    box-shadow: green 0 0 3px,
+         green 0 0 5px,
+         lightskyblue 0 0 8px,
+         lightblue 0 0 15px;
+    background-color: lawngreen;
+}
+
+.hexagon.active em {
+    background-color: lawngreen;
+}
+
+input[type=range] {
+    width: 90%;
+    margin-right: 10%;
 }

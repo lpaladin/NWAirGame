@@ -1,4 +1,11 @@
-﻿{
-  "name": "NWAirGame",
-  "main": "index.html"
+{
+    "name": "NWAirGame",
+    "main": "app://nw.air.game/index.html",
+    "version": "0.0.1",
+    "window": {
+        "title": "载入中……",
+        "icon": "/Images/app.png",
+        "toolbar": false
+    },
+    "node-main": "init.js"
 }

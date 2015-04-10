@@ -1,10 +1,91 @@
-﻿
-// 这两个辅助函数用于TypeScript强制类型转换
-var _$ = function (a): JQuery { return a };
-var _ = function (a): any { return a };
+﻿// 用于TypeScript强制类型转换
+var _$ = function (a: JQuery): IJQueryExt { return <IJQueryExt> a };
+var _ = function (a) { return a };
 
+var dummy = {};
+
+interface IUniqueSet {
+    [index: number]: boolean
+}
+
+enum Direction {
+    Up, Right, Down, Left
+}
+
+/*
+ * 让地图平滑移动的控制器。
+ */
+class MapMovementController {
+    private pressedDir: IUniqueSet;
+    private timUpdateMap;
+    private pressedCount: number;
+
+    public constructor() { this.pressedDir = {}; this.pressedCount = 0; }
+    public setDir(direction: Direction, pressed: boolean) {
+        if (this.pressedDir[direction] == true && pressed == false) {
+            this.pressedDir[direction] = false;
+            if (--this.pressedCount == 0) {
+                clearInterval(this.timUpdateMap);
+                this.timUpdateMap = null;
+            }
+        } else if (!this.pressedDir[direction] && pressed == true) {
+            this.pressedDir[direction] = true;
+            if (this.pressedCount++ == 0) {
+                this.timUpdateMap = setInterval(MapMovementController.moveMap, 30, this);
+            }
+        }
+    }
+
+    public static moveMap(curr: MapMovementController): void {
+        var offset = ui.dMapInner.offset();
+        if (curr.pressedDir[Direction.Up] == true)
+            if (offset.top <= 0)
+                TweenMax.to(ui.dMapInner, 0.1, { bottom: "-=25" });
+            else
+                curr.setDir(Direction.Up, false);
+        if (curr.pressedDir[Direction.Down] == true)
+            if (parseFloat(ui.dMapInner.css("bottom")) <= 0)
+                TweenMax.to(ui.dMapInner, 0.1, { bottom: "+=25" });
+            else
+                curr.setDir(Direction.Down, false);
+        if (curr.pressedDir[Direction.Left] == true)
+            if (offset.left <= 0)
+                TweenMax.to(ui.dMapInner, 0.1, { left: "+=25" });
+            else
+                curr.setDir(Direction.Left, false);
+        if (curr.pressedDir[Direction.Right] == true)
+            if (offset.left + ui.dMapInner.width() >= ui.dMapOuter.width())
+                TweenMax.to(ui.dMapInner, 0.1, { left: "-=25" });
+            else
+                curr.setDir(Direction.Right, false);
+    }
+}
+
+var ui = {
+    dGameMenu: <JQuery> null,
+    dIntro: <JQuery> null,
+    gameDisplay: <JQuery> null,
+    lstMessages: <JQuery> null,
+    lstLoadProgress: <JQuery> null,
+    lstSaveProgress: <JQuery> null,
+    mnuMainMenu: <JQuery> null,
+    dlgModal: <JQuery> null,
+    dCredits: <JQuery> null,
+    dlgLoadProgress: <JQuery> null,
+    dlgSaveProgress: <JQuery> null,
+    dLoading: <JQuery> null,
+    dGameMain: <JQuery> null,
+    panPlayControl: <JQuery> null,
+    dMapInner: <JQuery> null,
+    dMapView: <JQuery> null,
+    dMapOuter: <JQuery> null,
+    dAnimMask: <JQuery> null,
+    dStatusInfo: <JQuery> null
+};
+
+// 辅助函数所在的静态类
 class Helpers {
-    public static KeyCodes = {
+    public static keyCodes = {
         BACKSPACE: 8,
         TAB: 9,
         ENTER: 13,
@@ -116,32 +197,100 @@ class Helpers {
             result[key] = additionalProperties[key];
         return result;
     }
-}
- 
-$.fn.makeDraggable = function (): JQuery {
-    var $this: JQuery = this;
-    var offset = null;
-    $this.mousedown((e) => {
-        if (e.target.tagName == "BUTTON")
-            return;
-        offset = {
-            x: parseFloat($this.css("left")) - e.clientX,
-            y: parseFloat($this.css("top")) - e.clientY
-        };
-    }).mousemove((e) => {
-        if (offset)
-            $this.css({
-                left: offset.x + e.clientX,
-                top: offset.y + e.clientY
-            });
-        }).mouseup((e) => offset = null);
-    return this;
-};
 
-$.fn.center = function (): JQuery {
-    var $this: JQuery = this;
-    return $this.css({
-        top: ($this.parent().height() - $this.height()) / 2,
-        left: ($this.parent().width() - $this.width()) / 2
+    /*
+     * @param upperBound 不包含该边界
+     */
+    public static randBetween(lowerBound: number, upperBound: number, integer: boolean) {
+        var result = Math.random() * (upperBound - lowerBound) + lowerBound;
+        if (integer)
+            return Math.floor(result);
+        return result; 
+    }
+
+    public static dateToString(date: Date): string {
+        var min: any = date.getMinutes(), sec: any = date.getSeconds();
+        if (min < 10)
+            min = "0" + min;
+        if (sec < 10)
+            sec = "0" + sec;
+        return date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " +
+            date.getHours() + ":" + min + ":" + sec;
+    }
+
+    public static getParticlesAnimation(container: JQuery) {
+        var particlesTimeline = new TimelineLite(),
+            i = 150,
+            radius = 900,
+            dots = [],
+            rawDots = [];
+
+        while (--i > -1) {
+            var dot = $(`<figure class="centered" id="dot${i}">·</figure>`);
+            container.append(dot);
+            var angle = Math.random() * Math.PI * 2,
+                insertionTime = i * 0.015;
+
+            particlesTimeline.from(dot, .2, { opacity: 0 }, insertionTime + 0.4);
+
+            particlesTimeline.to(dot, 1.5, {
+                x: Math.cos(angle) * radius,
+                y: Math.sin(angle) * radius,
+                width: 32,
+                height: 32,
+                ease: Cubic.easeIn
+            }, insertionTime)
+                .to(dot, 0.1, { opacity: 0 }, insertionTime + 1.4);
+
+        }
+        return particlesTimeline;
+    }             
+}
+
+declare var Draggable: any;
+ 
+// 使得元素可拖动
+$.fn.makeDraggable = function (): IJQueryExt {
+    return this.each(function () {
+        var $this = $(this);
+        if ((<any> $this).draggable)
+            return;
+        var offset = null;
+        $this.mousedown((e) => {
+            if (e.target.tagName == "BUTTON")
+                return;
+            offset = {
+                x: parseFloat($this.css("left")) - e.clientX,
+                y: parseFloat($this.css("top")) - e.clientY
+            };
+        }).mousemove((e) => {
+            if (offset)
+                $this.css({
+                    left: offset.x + e.clientX,
+                    top: offset.y + e.clientY
+                });
+        }).mouseup((e) => offset = null);
+        (<any> $this).draggable = true;
     });
 };
+
+// 居中指定元素
+$.fn.center = function (): IJQueryExt {
+    return this.each(function () {
+        var $this = $(this);
+        $this.css({
+            top: ($this.parent().height() - $this.height()) / 2,
+            left: ($this.parent().width() - $this.width()) / 2
+        });
+    });
+};
+
+interface IJQueryExt extends JQuery {
+    makeDraggable(): IJQueryExt;
+    center(): IJQueryExt;
+}
+
+function ReloadCSS() {
+    var css = (<HTMLLinkElement> $("#lnkAppCSS")[0]);
+    css.href = css.href.replace(/\?.*|$/, "?" + Math.random());
+}
