@@ -54,7 +54,7 @@ var MapMovementController = (function () {
             else
                 curr.setDir(3 /* Left */, false);
         if (curr.pressedDir[1 /* Right */] == true)
-            if (offset.left + ui.dMapInner.width() >= ui.dMapOuter.width())
+            if (offset.left + ui.dMapInner.width() * parseFloat(ui.dMapInner.css("zoom")) >= ui.dMapOuter.width())
                 TweenMax.to(ui.dMapInner, 0.1, { left: "-=25" });
             else
                 curr.setDir(1 /* Right */, false);
@@ -80,7 +80,9 @@ var ui = {
     dMapView: null,
     dMapOuter: null,
     dAnimMask: null,
-    dStatusInfo: null
+    dStatusInfo: null,
+    dlgMapSizeSelect: null,
+    dlgActionModal: null
 };
 // 辅助函数所在的静态类
 var Helpers = (function () {
@@ -96,11 +98,30 @@ var Helpers = (function () {
             result[key] = additionalProperties[key];
         return result;
     };
+    /* +---0 1 2 3 4 5                                +-------------
+     * |0    ◇  ◇  ◇                               |    /x
+     * 01  ◇◇◇◇◇◇                               |   /
+     * 12  ◇◇◇◇◇◇   ====转换为三维冗余坐标===>  |  E
+     * 23  ◇◇◇◇◇◇                               |  |\
+     * 34  ◇◇◇◇◇◇                               | z| \y
+     * 4   ◇  ◇  ◇                                 |
+     */
+    Helpers.hexDistance = function (row1, col1, row2, col2) {
+        var z1 = Math.floor(col1 / 2) + row1, z2 = Math.floor(col2 / 2) + row2, xDelta = Math.abs(col2 - col1), yDelta = Math.abs(z2 - col2 - z1 + col1), zDelta = Math.abs(z2 - z1);
+        return Math.max(xDelta, yDelta, zDelta);
+    };
+    Helpers.loopThroughHexCircle = function (row, col, func, radius) {
+        radius = typeof radius == "number" ? radius : 1;
+        for (var x = col - radius - 1; x <= col + radius + 1; x++)
+            for (var y = row - radius - 1; y <= row + radius + 1; y++)
+                if (this.hexDistance(row, col, y, x) == radius)
+                    func(y, x);
+    };
     /*
      * @param upperBound 不包含该边界
      */
-    Helpers.randBetween = function (lowerBound, upperBound, integer) {
-        var result = Math.random() * (upperBound - lowerBound) + lowerBound;
+    Helpers.randBetween = function (lowerBound, upperBound, integer, curvePower) {
+        var result = Math.pow(Math.random(), curvePower || 1) * (upperBound - lowerBound) + lowerBound;
         if (integer)
             return Math.floor(result);
         return result;
@@ -113,10 +134,13 @@ var Helpers = (function () {
             sec = "0" + sec;
         return date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + date.getHours() + ":" + min + ":" + sec;
     };
+    Helpers.randInArray = function (array) {
+        return array[Math.floor(array.length * Math.random())];
+    };
     Helpers.getParticlesAnimation = function (container) {
         var particlesTimeline = new TimelineLite(), i = 150, radius = 900, dots = [], rawDots = [];
         while (--i > -1) {
-            var dot = $("<figure class=\"centered\" id=\"dot" + i + "\">·</figure>");
+            var dot = $("<figure class=\"centered\">·</figure>");
             container.append(dot);
             var angle = Math.random() * Math.PI * 2, insertionTime = i * 0.015;
             particlesTimeline.from(dot, .2, { opacity: 0 }, insertionTime + 0.4);
@@ -237,7 +261,7 @@ var Helpers = (function () {
 $.fn.makeDraggable = function () {
     return this.each(function () {
         var $this = $(this);
-        if ($this.draggable)
+        if (_($this).draggable)
             return;
         var offset = null;
         $this.mousedown(function (e) {
@@ -254,7 +278,7 @@ $.fn.makeDraggable = function () {
                     top: offset.y + e.clientY
                 });
         }).mouseup(function (e) { return offset = null; });
-        $this.draggable = true;
+        (_($this)).draggable = true;
     });
 };
 // 居中指定元素

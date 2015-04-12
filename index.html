@@ -47,9 +47,11 @@
         <section id="dGameMain" style="display: none">
             <div id="dMapView">
                 <div id="dMapOuter">
-                    <div id="dMapInner"></div>
+                    <div id="dMapInner">
+                        <b class="bkg3d-infinite land"></b>
+                        <b class="bkg3d-infinite sky"></b>
+                    </div>
                 </div>
-                <aside></aside>
                 <figure class="dirctrl top" data-dir="Up"></figure>
                 <figure class="dirctrl bottom" data-dir="Down"></figure>
                 <figure class="dirctrl left" data-dir="Left"></figure>
@@ -64,6 +66,7 @@
                 </div>
             </div>
         </section>
+        <aside></aside>
         <section id="dGameMenu" style="display: none">
             <div id="dTitle">
                 <h1 class="superShadow">AppTitle</h1>
@@ -78,6 +81,19 @@
                 <li class="show" data-action="about">关于游戏</li>
                 <li class="show" data-action="exit">退出游戏</li>
             </ul>
+            <div class="dialog-body" id="dlgMapSizeSelect" style="display: none">
+                <header>新游戏</header>
+                <p class="message">请注意，当前进度会丢失。</p>
+                <ul>
+                    <li><label><input type="radio" name="mapsize" value="0" checked /> 小型地图</label></li>
+                    <li><label><input type="radio" name="mapsize" value="1" /> 中型地图</label></li>
+                    <li><label><input type="radio" name="mapsize" value="2" /> 大型地图</label></li>
+                </ul>
+                <p class="clearfix" style="margin-top: 10px">
+                    <button class="classic pull-left" onclick="frame.newGame($('#dlgMapSizeSelect input[name=mapsize]:checked').val())">开始</button>
+                    <button class="classic pull-right cancel">放弃</button>
+                </p>
+            </div>
             <div class="dialog-body" id="dlgLoadProgress" style="display: none">
                 <header>载入进度</header>
                 <p class="message">请注意，当前进度会丢失。</p>
@@ -115,6 +131,21 @@
                 <h4>2015 年 4 月</h4>
             </div>
             <button class="classic" onclick="frame.changeUIScene(uiScenes.sGameMenu)">返回</button>
+        </section>
+        <section id="dlgActionModal" style="display: none">
+            <div class="dialog-body">
+                <header>标题</header>
+                <div class="hex-status">
+                    <div class="clearfix">
+                        <div class="hex-container"></div>
+                    </div>
+                    <div class="hex-summary"></div>
+                </div>
+                <p>
+                    <button class="classic" onclick="frame.onActionModalResult({})">确认</button>
+                    <button class="classic" onclick="frame.onActionModalResult(null)">放弃</button>
+                </p>
+            </div>
         </section>
         <section id="dlgModal" style="display: none">
             <div class="dialog-body">

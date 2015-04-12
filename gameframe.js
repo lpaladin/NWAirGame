@@ -2,6 +2,7 @@ var gui = require('nw.gui');
 var fs = require('fs');
 var wnd = gui.Window.get();
 var mnuHex = new gui.Menu();
+//#region 类型定义
 /*
  * 游戏不同界面间的切换定义。
  */
@@ -38,17 +39,11 @@ var MessageType;
 var GameFrame = (function () {
     function GameFrame() {
         var _this = this;
-        this.logicModules = {
-            gameMap: null
-        };
         this._inGame = false;
         this._pausing = false;
         if (GameFrame._init)
             throw "游戏框架被再次初始化！";
         GameFrame._init = true;
-        this.stateData = {
-            gameMap: null
-        };
         mnuHex.append(new gui.MenuItem({
             label: "　兴建",
             icon: "/Images/Icon/112_Plus_Green_16x16_72.png",
@@ -81,9 +76,10 @@ var GameFrame = (function () {
         var _this = this;
         this.pushMessage(0 /* Information */, "读取中，请稍候……");
         this.stateData = JSON.parse(fs.readFileSync("./UserData/save" + id + ".sav", "utf8"));
-        this.logicModules.gameMap = new GameMap(this.stateData.gameMap);
+        this.logicModule = new WorldDevelopmentModel(this.stateData);
         this.pushMessage(0 /* Information */, "进度读取成功。");
         ui.dlgLoadProgress.fadeOut();
+        this.initializeVisual();
         this.changeUIScene(uiScenes.sGameMain, { skipIntro: true }).call(function () { return _this.inGame = true; });
         return true;
     };
@@ -138,21 +134,42 @@ var GameFrame = (function () {
         TimelineLite.exportRoot().timeScale(to);
     };
     GameFrame.prototype.hexMenuCall = function (type) {
-        var currentHex = GameMapHex.selectedHex;
+        var currentHex = GameMapHex.selectedHex, cb;
         switch (type) {
             case GameMapHexMenuActions.Build:
+                cb = function (result) { return 0; };
             case GameMapHexMenuActions.Destroy:
         }
+        this.showActionModal(type, currentHex, cb);
+    };
+    GameFrame.prototype.initializeVisual = function () {
+        frame.mapViewAngle = 60;
+        // 构造云层
+        ui.dMapInner.find("b.cloud-layer").remove();
+        for (var i = Helpers.randBetween(3, 6, true); i >= 0; i--) {
+            var layer = $("<b class=\"bkg3d-infinite cloud-layer\" style=\"bottom: " + Helpers.randBetween(0, 101, true) + "%\"></b>");
+            for (var j = Helpers.randBetween(3, 6, true); j >= 0; j--)
+                layer.append($('<img class="x-billboard-90" src="/Images/cloud.png" />').css({
+                    animation: "cloud-float " + Helpers.randBetween(30, 60, true) + "s linear infinite -" + Helpers.randBetween(15, 30, true) + "s"
+                }));
+            ui.dMapInner.append(layer);
+        }
+    };
+    GameFrame.prototype.newGame = function (typeid) {
+        var _this = this;
+        var types = [{ width: 7, height: 7 }, { width: 10, height: 10 }, { width: 15, height: 15 }];
+        ui.dlgMapSizeSelect.fadeOut();
+        this.initializeVisual();
+        this.initMap(types[typeid].height, types[typeid].width);
+        this.changeUIScene(uiScenes.sGameMain).call(function () { return _this.inGame = true; });
     };
     GameFrame.prototype.mainMenuCall = function (type) {
-        var _this = this;
         switch (type) {
             case "resumeGame":
                 this.pausing = false;
                 break;
             case "beginGame":
-                this.initMap(10, 20);
-                this.changeUIScene(uiScenes.sGameMain).call(function () { return _this.inGame = true; });
+                this.showDialog(ui.dlgMapSizeSelect);
                 break;
             case "loadGame":
                 // 遍历存档文件夹
@@ -188,8 +205,8 @@ var GameFrame = (function () {
         }
     };
     GameFrame.prototype.initMap = function (height, width) {
-        this.logicModules.gameMap = GameMap.fromParameters(height, width);
-        this.stateData.gameMap = this.logicModules.gameMap.data;
+        this.logicModule = WorldDevelopmentModel.generateNew(height, width);
+        this.stateData = this.logicModule.data;
     };
     GameFrame.prototype.pushMessage = function (type, msg) {
         var html;
@@ -250,6 +267,19 @@ var GameFrame = (function () {
         enumerable: true,
         configurable: true
     });
+    GameFrame.prototype.showActionModal = function (type, hex, callback) {
+        if (this.actionModalCallback)
+            throw "这不可能！为什么有对话框开着还会调用我？";
+        this.actionModalCallback = callback;
+        ui.dlgActionModal.find("header").text(Arguments.gameMapHexMenuActionName[type]);
+        hex.inflateActionModal(ui.dlgActionModal.find(".hex-status"));
+        ui.dlgActionModal.fadeIn();
+        this.showDialog(ui.dlgActionModal.find(".dialog-body"));
+    };
+    GameFrame.prototype.onActionModalResult = function (result) {
+        ui.dlgActionModal.fadeOut();
+        this.actionModalCallback = null;
+    };
     GameFrame.prototype.showModal = function (title, content, callback) {
         if (this.modalCallback)
             throw "这不可能！为什么有对话框开着还会调用我？";
@@ -308,7 +338,6 @@ var GameFrame = (function () {
     return GameFrame;
 })();
 //#endregion
-var logic;
 var frame;
 var uiScenes = {
     sIntro: null,
@@ -359,9 +388,9 @@ function UISceneAnimationDefinitions() {
         main.show();
         tl.fromTo(main, 0.5, { opacity: 0 }, { opacity: 1 }).fromTo(ui.dStatusInfo, 0.5, { width: 0 }, { width: "25vw", ease: Circ.easeIn }, 0);
         if (!argu || !argu.skipIntro)
-            tl.fromTo(ui.dMapOuter, 5, { rotationX: 0, z: 0 }, { rotationX: 60, z: -100 }, 0.5).staggerFromTo(ui.dMapInner.find("figure"), 0.5, { rotationX: 90, rotationY: 75, z: 50, opacity: 0 }, { rotationX: 0, rotationY: 0, z: 0, opacity: 1 }, 0.1, 0.5);
+            tl.fromTo(ui.dMapOuter, 5, { rotationX: 0, z: 0 }, { rotationX: 60, z: -100 }, 0.5).fromTo($(".x-billboard-90"), 5, { rotationX: 90 }, { rotationX: 30 }, 0.5).staggerFromTo(ui.dMapInner.find("figure"), 0.5, { rotationX: 90, rotationY: 75, z: 50, opacity: 0 }, { rotationX: 0, rotationY: 0, z: 0, opacity: 1 }, 0.1, 0.5);
         else
-            tl.fromTo(ui.dMapOuter, 1, { rotationX: 0, z: 0 }, { rotationX: 60, z: -100 }, 0.5);
+            tl.fromTo(ui.dMapOuter, 1, { rotationX: 0, z: 0 }, { rotationX: 60, z: -100 }, 0.5).fromTo($(".x-billboard-90"), 1, { rotationX: 90 }, { rotationX: 30 }, 0.5);
         return tl;
     }, function (main, argu) {
         var tl = new TimelineMax();
@@ -373,7 +402,6 @@ function UISceneAnimationDefinitions() {
 }
 var mapMovementController;
 $(document).ready(function () {
-    logic = new GameLogicModel();
     frame = new GameFrame();
     for (var i in ui)
         ui[i] = $("#" + i);
@@ -422,18 +450,19 @@ $(document).ready(function () {
     if (wnd.isDevToolsOpen())
         ui.panPlayControl.show();
     // 鼠标控制地图移动
-    var angle = 60;
     ui.dMapView.on('mousewheel', function (e) {
-        angle -= e.originalEvent.wheelDelta / 100;
-        if (angle > 60)
-            angle = 60;
-        else if (angle < 0)
-            angle = 0;
-        TweenMax.to(ui.dMapOuter, 0.1, { rotationX: angle });
+        frame.mapViewAngle -= _(e.originalEvent).wheelDelta / 100;
+        if (frame.mapViewAngle > 75)
+            frame.mapViewAngle = 75;
+        else if (frame.mapViewAngle < 30)
+            frame.mapViewAngle = 30;
+        TweenMax.to(ui.dMapOuter, 0.1, { rotationX: frame.mapViewAngle });
+        TweenMax.to($(".x-billboard"), 0.1, { rotationX: -frame.mapViewAngle });
+        TweenMax.to($(".x-billboard-90"), 0.1, { rotationX: -frame.mapViewAngle + 90 });
     }).find("figure.dirctrl").hover(function () {
-        mapMovementController.setDir(Direction[this.dataset["dir"]], true);
+        mapMovementController.setDir(_(Direction)[this.dataset["dir"]], true);
     }, function () {
-        mapMovementController.setDir(Direction[this.dataset["dir"]], false);
+        mapMovementController.setDir(_(Direction)[this.dataset["dir"]], false);
     });
     // 入场动画
     frame.changeUIScene(uiScenes.sIntro).set(dummy, dummy, "+=0.5").call(function () { return frame.changeUIScene(uiScenes.sGameMenu); });

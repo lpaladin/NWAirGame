@@ -12,6 +12,7 @@ enum Direction {
     Up, Right, Down, Left
 }
 
+declare var frame;
 /*
  * 让地图平滑移动的控制器。
  */
@@ -54,7 +55,7 @@ class MapMovementController {
             else
                 curr.setDir(Direction.Left, false);
         if (curr.pressedDir[Direction.Right] == true)
-            if (offset.left + ui.dMapInner.width() >= ui.dMapOuter.width())
+            if (offset.left + ui.dMapInner.width() * parseFloat(ui.dMapInner.css("zoom")) >= ui.dMapOuter.width())
                 TweenMax.to(ui.dMapInner, 0.1, { left: "-=25" });
             else
                 curr.setDir(Direction.Right, false);
@@ -80,7 +81,9 @@ var ui = {
     dMapView: <JQuery> null,
     dMapOuter: <JQuery> null,
     dAnimMask: <JQuery> null,
-    dStatusInfo: <JQuery> null
+    dStatusInfo: <JQuery> null,
+    dlgMapSizeSelect: <JQuery> null,
+    dlgActionModal: <JQuery> null
 };
 
 // 辅助函数所在的静态类
@@ -197,12 +200,36 @@ class Helpers {
             result[key] = additionalProperties[key];
         return result;
     }
+    
+    /* +---0 1 2 3 4 5                                +-------------
+     * |0    ◇  ◇  ◇                               |    /x
+     * 01  ◇◇◇◇◇◇                               |   /
+     * 12  ◇◇◇◇◇◇   ====转换为三维冗余坐标===>  |  E
+     * 23  ◇◇◇◇◇◇                               |  |\
+     * 34  ◇◇◇◇◇◇                               | z| \y
+     * 4   ◇  ◇  ◇                                 |
+     */
+    public static hexDistance(row1: number, col1: number, row2: number, col2: number): number {
+        var z1 = Math.floor(col1 / 2) + row1, z2 = Math.floor(col2 / 2) + row2,
+            xDelta = Math.abs(col2 - col1),
+            yDelta = Math.abs(z2 - col2 - z1 + col1),
+            zDelta = Math.abs(z2 - z1);
+        return Math.max(xDelta, yDelta, zDelta);
+    }
+
+    public static loopThroughHexCircle(row: number, col: number, func: (row: number, col: number) => void, radius?: number): void {
+        radius = typeof radius == "number" ? radius : 1;
+        for (var x = col - radius - 1; x <= col + radius + 1; x++)
+            for (var y = row - radius - 1; y <= row + radius + 1; y++)
+                if (this.hexDistance(row, col, y, x) == radius)
+                    func(y, x);
+    }
 
     /*
      * @param upperBound 不包含该边界
      */
-    public static randBetween(lowerBound: number, upperBound: number, integer: boolean) {
-        var result = Math.random() * (upperBound - lowerBound) + lowerBound;
+    public static randBetween(lowerBound: number, upperBound: number, integer: boolean, curvePower?: number) {
+        var result = Math.pow(Math.random(), curvePower || 1) * (upperBound - lowerBound) + lowerBound;
         if (integer)
             return Math.floor(result);
         return result; 
@@ -218,6 +245,10 @@ class Helpers {
             date.getHours() + ":" + min + ":" + sec;
     }
 
+    public static randInArray<T>(array: Array<T>): T {
+        return array[Math.floor(array.length * Math.random())];
+    }
+
     public static getParticlesAnimation(container: JQuery) {
         var particlesTimeline = new TimelineLite(),
             i = 150,
@@ -226,7 +257,7 @@ class Helpers {
             rawDots = [];
 
         while (--i > -1) {
-            var dot = $(`<figure class="centered" id="dot${i}">·</figure>`);
+            var dot = $(`<figure class="centered">·</figure>`);
             container.append(dot);
             var angle = Math.random() * Math.PI * 2,
                 insertionTime = i * 0.015;
@@ -253,7 +284,7 @@ declare var Draggable: any;
 $.fn.makeDraggable = function (): IJQueryExt {
     return this.each(function () {
         var $this = $(this);
-        if ((<any> $this).draggable)
+        if (_($this).draggable)
             return;
         var offset = null;
         $this.mousedown((e) => {
@@ -270,7 +301,7 @@ $.fn.makeDraggable = function (): IJQueryExt {
                     top: offset.y + e.clientY
                 });
         }).mouseup((e) => offset = null);
-        (<any> $this).draggable = true;
+        (_($this)).draggable = true;
     });
 };
 

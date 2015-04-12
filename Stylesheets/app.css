@@ -85,14 +85,14 @@ div#dTitle {
     text-align: right !important;
 }
 
-div#dTitle h1 {
-    font-size: 4em;
-    font-weight: bold;
-}
+    div#dTitle h1 {
+        font-size: 4em;
+        font-weight: bold;
+    }
 
-div#dTitle h2 {
-    font-size: 2em;
-}
+    div#dTitle h2 {
+        font-size: 2em;
+    }
 
 #dIntro {
     background-color: black;
@@ -102,12 +102,12 @@ div#dTitle h2 {
     background-color: rgba(0, 0, 0, 0.5);
 }
 
-#dGameMenu ul.hl-style-menu {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    padding: 20px;
-}
+    #dGameMenu ul.hl-style-menu {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        padding: 20px;
+    }
 
 ul.hl-style-menu li {
     display: none;
@@ -157,7 +157,7 @@ ul#lstMessages {
     color: indianred;
 }
 
-#dlgModal {
+#dlgModal, #dlgActionModal {
     background-color: rgba(0, 0, 0, 0.3);
 }
 
@@ -179,6 +179,11 @@ ul#lstMessages {
         text-align: left;
     }
 
+input[type=radio] {
+    background-color: ThreeDFace;
+    border: 2px inset ThreeDFace !important;
+}
+
 button.classic {
     background-color: ThreeDFace;
     color: white;
@@ -190,9 +195,9 @@ button.classic {
     box-sizing: content-box;
 }
 
-button.classic:active {
-    padding: 3px 9px 1px 11px;
-}
+    button.classic:active {
+        padding: 3px 9px 1px 11px;
+    }
 
 .save-list {
     border: inset;
@@ -214,34 +219,34 @@ button.classic:active {
         transition: all ease-out 0.2s;
     }
 
-    .save-list li img {
-        -moz-box-sizing: border-box;
-        -webkit-box-sizing: border-box;
-        box-sizing: border-box;
-        height: 70px;
-        width: 100px;
-        margin: 10px;
-        float: left;
-        border: 3px solid gray;
-    }
+        .save-list li img {
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            height: 70px;
+            width: 100px;
+            margin: 10px;
+            float: left;
+            border: 3px solid gray;
+        }
 
-    .save-list li > div {
-        float: left;
-        margin: 10px 0;
-    }
+        .save-list li > div {
+            float: left;
+            margin: 10px 0;
+        }
 
-    .save-list li > div p.title {
-        font-weight: bold;
-    }
+            .save-list li > div p.title {
+                font-weight: bold;
+            }
 
-.save-list li.active {
-    background-color: rgba(220, 220, 220, 0.8);
-    color: black;
-}
+        .save-list li.active {
+            background-color: rgba(220, 220, 220, 0.8);
+            color: black;
+        }
 
-    .save-list li.active img {
-        border: 3px solid orange;
-    }
+            .save-list li.active img {
+                border: 3px solid orange;
+            }
 
 #dLoading div {
     -webkit-transform-style: preserve-3d;
@@ -263,29 +268,15 @@ button.classic:active {
     font-size: 3em;
 }
 
-#dLoading header span {
-    display: inline-block;
-}
+    #dLoading header span {
+        display: inline-block;
+    }
 
 /*
 text-shadow originated from: http://codepen.io/zitrusfrisch
 */
 .superShadow {
-  text-shadow:     0 1px 0 hsl(174,5%,80%),
-                     0 2px 0 hsl(174,5%,75%),
-                     0 3px 0 hsl(174,5%,70%),
-                     0 4px 0 hsl(174,5%,66%),
-                     0 5px 0 hsl(174,5%,64%),
-                     0 6px 0 hsl(174,5%,62%),
-                     0 7px 0 hsl(174,5%,61%),
-                     0 8px 0 hsl(174,5%,60%),
-    
-                     0 0 5px rgba(0,0,0,.05),
-                    0 1px 3px rgba(0,0,0,.2),
-                    0 3px 5px rgba(0,0,0,.2),
-                   0 5px 10px rgba(0,0,0,.2),
-                  0 10px 10px rgba(0,0,0,.2),
-                  0 20px 20px rgba(0,0,0,.3);
+    text-shadow: 0 1px 0 hsl(174,5%,80%), 0 2px 0 hsl(174,5%,75%), 0 3px 0 hsl(174,5%,70%), 0 4px 0 hsl(174,5%,66%), 0 5px 0 hsl(174,5%,64%), 0 6px 0 hsl(174,5%,62%), 0 7px 0 hsl(174,5%,61%), 0 8px 0 hsl(174,5%,60%), 0 0 5px rgba(0,0,0,.05), 0 1px 3px rgba(0,0,0,.2), 0 3px 5px rgba(0,0,0,.2), 0 5px 10px rgba(0,0,0,.2), 0 10px 10px rgba(0,0,0,.2), 0 20px 20px rgba(0,0,0,.3);
 }
 
 #dGameMain {
@@ -295,12 +286,12 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
     width: 100%;
 }
 
-#dGameMain > div {
-    display: table-cell;
-    vertical-align: middle;
-    text-align: center;
-    color: black;
-}
+    #dGameMain > div {
+        display: table-cell;
+        vertical-align: middle;
+        text-align: center;
+        color: black;
+    }
 
 #dStatusInfo {
     position: relative;
@@ -316,43 +307,43 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
     perspective: 1000;
 }
 
-#dMapView .dirctrl.top {
-    position: absolute;
-    top: 0;
-    height: 10%;
-    left: 10%;
-    right: 10%;
-}
+    #dMapView .dirctrl.top {
+        position: absolute;
+        top: 0;
+        height: 10%;
+        left: 10%;
+        right: 10%;
+    }
 
-#dMapView .dirctrl.bottom {
-    position: absolute;
-    bottom: 0;
-    height: 10%;
-    left: 10%;
-    right: 10%;
-}
+    #dMapView .dirctrl.bottom {
+        position: absolute;
+        bottom: 0;
+        height: 10%;
+        left: 10%;
+        right: 10%;
+    }
 
-#dMapView .dirctrl.left {
-    position: absolute;
-    top: 0;
-    width: 10%;
-    bottom: 0;
-    left: 0;
-}
+    #dMapView .dirctrl.left {
+        position: absolute;
+        top: 0;
+        width: 10%;
+        bottom: 0;
+        left: 0;
+    }
 
-#dMapView .dirctrl.right {
-    position: absolute;
-    top: 0;
-    width: 10%;
-    bottom: 0;
-    right: 0;
-}
+    #dMapView .dirctrl.right {
+        position: absolute;
+        top: 0;
+        width: 10%;
+        bottom: 0;
+        right: 0;
+    }
 
-#dMapView .dirctrl:hover {
-    background-color: rgba(127, 127, 127, 0.2)
-}
+    #dMapView .dirctrl:hover {
+        background-color: rgba(127, 127, 127, 0.2);
+    }
 
-    #dMapView aside {
+    #gameDisplay aside {
         pointer-events: none;
         position: absolute;
         width: auto;
@@ -361,12 +352,29 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
         -o-transform-origin: left bottom;
         -webkit-transform-origin: left bottom;
         transform-origin: left bottom;
-        border: 2px solid gray;
-        background-color: rgba(200, 200, 200, 0.5);
-        border-radius: 2px;
+        border: 2px outset gray;
+        background-color: rgba(0, 0, 0, 0.8);
+        border-radius: 5px;
         padding: 10px;
         display: none;
+        z-index: 10;
     }
+
+        #gameDisplay aside table th, #dlgActionModal .hex-summary table th {
+            color: gold;
+            padding: 0 5px;
+        }
+
+        #gameDisplay aside table td, #dlgActionModal .hex-summary table td {
+            text-align: right;
+            padding: 0 5px;
+            color: white;
+            text-shadow: royalblue 0 0 3px,
+                royalblue 0 0 3px,
+                royalblue 0 0 3px,
+                royalblue 0 0 3px,
+                royalblue 0 0 3px;
+        }
 
 #dMapOuter {
     position: absolute;
@@ -383,12 +391,92 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
     transform-origin: bottom center;
 }
 
+.bkg3d-infinite {
+    display: block;
+    position: absolute;
+    left: -200%;
+    right: -200%;
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+}
+
+    .bkg3d-infinite.land {
+        background: linear-gradient(to bottom, white, lightgreen);
+        -moz-transform: translateZ(-5px);
+        -ms-transform: translateZ(-5px);
+        -o-transform: translateZ(-5px);
+        -webkit-transform: translateZ(-5px);
+        transform: translateZ(-5px);
+        top: 0;
+        bottom: -100%;
+    }
+
+    .bkg3d-infinite.sky {
+        background: linear-gradient(to top, transparent, lightblue);
+        -moz-transform: rotateX(-90deg);
+        -ms-transform: rotateX(-90deg);
+        -o-transform: rotateX(-90deg);
+        -webkit-transform: rotateX(-90deg);
+        transform: rotateX(-90deg);
+        top: -100%;
+        bottom: 100%;
+        -moz-transform-origin: center bottom;
+        -ms-transform-origin: center bottom;
+        -o-transform-origin: center bottom;
+        -webkit-transform-origin: center bottom;
+        transform-origin: center bottom;
+    }
+
+    .bkg3d-infinite.cloud-layer {
+        -moz-transform-origin: center bottom;
+        -ms-transform-origin: center bottom;
+        -o-transform-origin: center bottom;
+        -webkit-transform-origin: center bottom;
+        transform-origin: center bottom;
+        top: -100%;
+        -moz-transform: rotateX(-90deg);
+        -ms-transform: rotateX(-90deg);
+        -o-transform: rotateX(-90deg);
+        -webkit-transform: rotateX(-90deg);
+        transform: rotateX(-90deg);
+        pointer-events: none;
+    }
+
+        .bkg3d-infinite.cloud-layer img {
+            position: absolute;
+            -moz-transform-origin: center bottom;
+            -ms-transform-origin: center bottom;
+            -o-transform-origin: center bottom;
+            -webkit-transform-origin: center bottom;
+            transform-origin: center bottom;
+            bottom: 10px;
+            opacity: 0.5;
+        }
+
+#dGameMain.paused .bkg3d-infinite.cloud-layer img {
+    -moz-animation-play-state: paused !important;
+    -o-animation-play-state: paused !important;
+    -webkit-animation-play-state: paused !important;
+    animation-play-state: paused !important;
+}
+
+@-webkit-keyframes cloud-float {
+    from {
+        left: 0;
+    }
+
+    to {
+        left: 100%;
+    }
+}
+
 #dMapInner {
     white-space: nowrap;
     display: inline-block;
     position: absolute;
     bottom: 0;
     left: 0;
+    zoom: 1;
     -webkit-transform-style: preserve-3d;
     transform-style: preserve-3d;
 }
@@ -430,7 +518,7 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
     color: gray;
     font-size: 40px;
     z-index: 4;
-    bottom: 0;
+    bottom: -10%;
     top: initial;
     -moz-animation: foggy 8s linear infinite alternate;
     -o-animation: foggy 8s linear infinite alternate;
@@ -438,20 +526,13 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
     animation: foggy 8s linear infinite alternate;
 }
 
-#dGameMain.paused .hexagon b.glyphicon {
-    -moz-animation-play-state: paused;
-    -o-animation-play-state: paused;
-    -webkit-animation-play-state: paused;
-    animation-play-state: paused;
-} 
-
-.hexagon b.glyphicon:last-of-type {
-    bottom: 10%;
-    -moz-animation: foggy 9s linear 1s infinite alternate;
-    -o-animation: foggy 9s linear 1s infinite alternate;
-    -webkit-animation: foggy 9s linear 1s infinite alternate;
-    animation: foggy 9s linear 1s infinite alternate;
-}
+    .hexagon b.glyphicon:last-of-type {
+        bottom: 5%;
+        -moz-animation: foggy 9s linear 1s infinite alternate;
+        -o-animation: foggy 9s linear 1s infinite alternate;
+        -webkit-animation: foggy 9s linear 1s infinite alternate;
+        animation: foggy 9s linear 1s infinite alternate;
+    }
 
 @-webkit-keyframes foggy {
     0% {
@@ -480,17 +561,18 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
 }
 
 .hexagon span {
-    -moz-transform: rotateX(-90deg);
-    -ms-transform: rotateX(-90deg);
-    -o-transform: rotateX(-90deg);
-    -webkit-transform: rotateX(-90deg);
-    transform: rotateX(-90deg);
+    -moz-transform: translateZ(2px) rotateX(-90deg);
+    -ms-transform: translateZ(2px) rotateX(-90deg);
+    -o-transform: translateZ(2px) rotateX(-90deg);
+    -webkit-transform: translateZ(2px) rotateX(-90deg);
+    transform: translateZ(2px) rotateX(-90deg);
     position: absolute;
     display: block;
     z-index: 4;
-    bottom: 50%;
+    bottom: 40%;
     left: 0;
     right: 0;
+    width: 120%;
     -moz-transform-origin: bottom center;
     -ms-transform-origin: bottom center;
     -o-transform-origin: bottom center;
@@ -498,9 +580,30 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
     transform-origin: bottom center;
 }
 
-.hexagon span img {
-    max-height: 100%;
-    max-width: 100%;
+    .hexagon span img {
+        max-height: 100%;
+        max-width: 100%;
+    }
+
+.hexagon meter.health-gauge {
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    left: -10%;
+    right: -10%;
+    -moz-transform-origin: center 600%;
+    -ms-transform-origin: center 600%;
+    -o-transform-origin: center 600%;
+    -webkit-transform-origin: center 600%;
+    transform-origin: center 600%;
+    background-color: rgba(200, 200, 200, 0.5);
+    border-radius: 2px;
+    display: none;
+    -moz-transform: rotateX(-60deg) translateZ(2px);
+    -ms-transform: rotateX(-60deg) translateZ(2px);
+    -o-transform: rotateX(-60deg) translateZ(2px);
+    -webkit-transform: rotateX(-60deg) translateZ(2px);
+    transform: rotateX(-60deg) translateZ(2px);
 }
 
 .hexagon, .hexagon:before, .hexagon:after, .hexagon em {
@@ -520,36 +623,81 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
         transform: rotate(60deg) skew(30deg);
     }
 
-.hexagon:before {
-    left: -27.5px;
-}
+    .hexagon:before {
+        left: -27.5px;
+    }
 
-.hexagon:after {
-    right: -27.5px;
-}
+    .hexagon:after {
+        right: -27.5px;
+    }
 
-.hexagon.glow, .hexagon.glow:before, .hexagon.glow:after {
-    box-shadow: green 0 0 10px;
-}
+    .hexagon.glow, .hexagon.glow:before, .hexagon.glow:after {
+        box-shadow: green 0 0 10px;
+    }
 
-.hexagon.glow.blur, .hexagon.glow.blur:before, .hexagon.glow.blur:after {
-    box-shadow: green 0 0 15px,
-        lightgreen 0 0 20px;
+        .hexagon.glow.blur, .hexagon.glow.blur:before, .hexagon.glow.blur:after {
+            box-shadow: green 0 0 15px, lightgreen 0 0 20px;
+        }
+
+@-webkit-keyframes emphasis {
+    from {
+        background-color: lawngreen;
+    }
+
+    to {
+        background-color: #518520;
+    }
 }
 
 .hexagon.active, .hexagon.active:before, .hexagon.active:after {
-    box-shadow: green 0 0 3px,
-         green 0 0 5px,
-         lightskyblue 0 0 8px,
-         lightblue 0 0 15px;
-    background-color: lawngreen;
+    box-shadow: green 0 0 3px, green 0 0 5px, lightskyblue 0 0 8px, lightblue 0 0 15px;
+    -moz-animation: emphasis 1s linear infinite alternate;
+    -o-animation: emphasis 1s linear infinite alternate;
+    -webkit-animation: emphasis 1s linear infinite alternate;
+    animation: emphasis 1s linear infinite alternate;
 }
 
-.hexagon.active em {
-    background-color: lawngreen;
+    .hexagon.active em {
+        -moz-animation: emphasis 1s linear infinite alternate;
+        -o-animation: emphasis 1s linear infinite alternate;
+        -webkit-animation: emphasis 1s linear infinite alternate;
+        animation: emphasis 1s linear infinite alternate;
+    }
+
+#dGameMain.paused .hexagon b.glyphicon, #dGameMain.paused .hexagon.active, #dGameMain.paused .hexagon.active:before, #dGameMain.paused .hexagon.active:after, #dGameMain.paused .hexagon.active em {
+    -moz-animation-play-state: paused;
+    -o-animation-play-state: paused;
+    -webkit-animation-play-state: paused;
+    animation-play-state: paused;
 }
 
 input[type=range] {
     width: 90%;
     margin-right: 10%;
+}
+
+#dlgActionModal .hex-status {
+    -moz-perspective: 1000;
+    -ms-perspective: 1000;
+    -webkit-perspective: 1000;
+    perspective: 1000;
+    padding: 20px;
+    display: table;
+}
+
+#dlgActionModal .hex-status > div {
+    display: table-cell;
+    height: 100%;
+    vertical-align: middle;
+}
+
+#dlgActionModal .hex-container {
+    -moz-transform: rotateX(60deg);
+    -ms-transform: rotateX(60deg);
+    -o-transform: rotateX(60deg);
+    -webkit-transform: rotateX(60deg);
+    transform: rotateX(60deg);
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+    margin-right: 40px;
 }
