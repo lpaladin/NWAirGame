@@ -8,6 +8,11 @@
     color: white;
 }
 
+@font-face {
+    font-family: 'metabold-roman';
+    src: url('/fonts/metabold-roman_.otf') format('opentype');
+}
+
 ul {
     margin: 0;
     padding: 0;
@@ -248,6 +253,10 @@ button.classic {
                 border: 3px solid orange;
             }
 
+#dLoading {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
 #dLoading div {
     -webkit-transform-style: preserve-3d;
     transform-style: preserve-3d;
@@ -281,23 +290,113 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
 
 #dGameMain {
     background-color: white;
-    display: table;
     height: 100%;
     width: 100%;
 }
 
-    #dGameMain > div {
-        display: table-cell;
-        vertical-align: middle;
-        text-align: center;
-        color: black;
+#dStatusInfoOverlay {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+}
+
+#dStatusInfoOverlay .upper-right {
+    position: absolute;
+    top: 0;
+    right: 0;
+    text-align: right;
+    margin-right: 10px;
+    margin-top: 10px;
+}
+
+#dStatusInfoOverlay .upper-left {
+    position: absolute;
+    top: 0;
+    left: 0;
+    text-align: left;
+    margin-left: 10px;
+    margin-top: 10px;
+}
+
+    #dStatusInfoOverlay .wind {
+        -moz-transform: perspective(600) rotateX(60deg);
+        -ms-transform: perspective(600) rotateX(60deg);
+        -o-transform: perspective(600) rotateX(60deg);
+        -webkit-transform: perspective(600) rotateX(60deg);
+        transform: perspective(600) rotateX(60deg);
+        -moz-transform-origin: bottom center;
+        -ms-transform-origin: bottom center;
+        -o-transform-origin: bottom center;
+        -webkit-transform-origin: bottom center;
+        transform-origin: bottom center;
     }
 
-#dStatusInfo {
-    position: relative;
-    width: 25vw;
-    background-color: lightgray;
-    border-left: 2px solid gray;
+#dStatusInfoOverlay > div {
+    font-size: 0.9em;
+}
+
+#dStatusInfoOverlay > div > p.gold > label {
+    background-color: gold;
+    color: black;
+}
+
+    #dStatusInfoOverlay > div > p.gold > span {
+        border: 1px solid gold;
+    }
+
+#dStatusInfoOverlay > div > p.indianred > label {
+    background-color: indianred;
+}
+
+    #dStatusInfoOverlay > div > p.indianred > span {
+        border: 1px solid indianred;
+    }
+
+#dStatusInfoOverlay > div > p.deepskyblue > label {
+    background-color: deepskyblue;
+}
+
+    #dStatusInfoOverlay > div > p.deepskyblue > span {
+        border: 1px solid deepskyblue;
+    }
+
+#dStatusInfoOverlay > div > p.mediumseagreen > label {
+    background-color: mediumseagreen;
+}
+
+    #dStatusInfoOverlay > div > p.mediumseagreen > span {
+        border: 1px solid mediumseagreen;
+    }
+
+    #dStatusInfoOverlay > div > p.bottom-only > span {
+        border-top: 1px solid transparent;
+        border-right: 1px solid transparent;
+        border-left: 1px solid transparent;
+    }
+    
+    #dStatusInfoOverlay > div > p.bottom-only > label {
+        border-top-right-radius: 5px;
+    }
+
+#dStatusInfoOverlay > div > p > label {
+    padding: 5px;
+    border-radius: 5px 0 0 5px;
+    margin: 0;
+}
+
+#dStatusInfoOverlay > div > p > span {
+    padding: 5px;
+    border-radius: 0 5px 5px 0;
+    font-weight: 900;
+    color: white;
+    font-family: 'metabold-roman';
+    text-shadow: black 1px 1px 1px,
+        black -1px 1px 1px,
+        black 1px -1px 1px,
+        black -1px -1px 1px;
 }
 
 #dMapView {
@@ -305,6 +404,11 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
     -ms-perspective: 1000;
     -webkit-perspective: 1000;
     perspective: 1000;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
 }
 
     #dMapView .dirctrl.top {
@@ -374,6 +478,16 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
                 royalblue 0 0 3px,
                 royalblue 0 0 3px,
                 royalblue 0 0 3px;
+        }
+
+        #dlgActionModal .hex-summary p {
+            margin-top: 1em;
+            color: black;
+            text-shadow: gold 0 0 3px,
+                gold 0 0 3px,
+                gold 0 0 3px,
+                gold 0 0 3px,
+                gold 0 0 3px;
         }
 
 #dMapOuter {
@@ -453,7 +567,7 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
             opacity: 0.5;
         }
 
-#dGameMain.paused .bkg3d-infinite.cloud-layer img {
+#dGameMain.paused .bkg3d-infinite.cloud-layer img, #dGameMain.paused .bkg3d-infinite.cloud-layer {
     -moz-animation-play-state: paused !important;
     -o-animation-play-state: paused !important;
     -webkit-animation-play-state: paused !important;
@@ -467,6 +581,16 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
 
     to {
         left: 100%;
+    }
+}
+
+@-webkit-keyframes cloud-layer-float {
+    from {
+        bottom: -100%;
+    }
+
+    to {
+        bottom: 200%;
     }
 }
 
@@ -657,6 +781,10 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
     animation: emphasis 1s linear infinite alternate;
 }
 
+.hexagon.has-action, .hexagon.has-action:before, .hexagon.has-action:after {
+    box-shadow: red 0 0 3px, red 0 0 5px, red 0 0 7px, red 0 0 10px !important;
+}
+
     .hexagon.active em {
         -moz-animation: emphasis 1s linear infinite alternate;
         -o-animation: emphasis 1s linear infinite alternate;
@@ -681,7 +809,7 @@ input[type=range] {
     -ms-perspective: 1000;
     -webkit-perspective: 1000;
     perspective: 1000;
-    padding: 20px;
+    padding: 20px 20px 0 20px;
     display: table;
 }
 
@@ -700,4 +828,223 @@ input[type=range] {
     -webkit-transform-style: preserve-3d;
     transform-style: preserve-3d;
     margin-right: 40px;
+}
+
+#dlgActionModal ul.action-list {
+    border: inset;
+    overflow-y: scroll;
+    text-align: center;
+    margin-bottom: 10px;
+    max-width: 90vw;
+}
+
+#dlgActionModal ul.action-list > li {
+    max-width: 40%;
+    margin: 2%;
+    min-height: 40px;
+    background-color: gray;
+    color: black;
+    display: inline-block;
+}
+
+#dlgActionModal ul#lstPolicy > li {
+    width: auto;
+}
+
+#dlgActionModal ul.action-list > li  .hex-container {
+    zoom: 0.5;
+    float: left;
+}
+
+#dlgActionModal ul.action-list > li > p {
+    float: left;
+    margin: 1em;
+}
+
+#dlgActionModal ul.action-list > li > p:last-child {
+    float: right;
+    color: gold;
+}
+
+#dlgActionModal ul.action-list > li.active {
+    background-color: orange;
+    color: white;
+}
+
+#dlgActionModal ul.action-list > li.active > p:last-child {
+    margin-left: 1em;
+    color: saddlebrown;
+    text-shadow: gold 0 0 3px,
+        gold 0 0 3px,
+        gold 0 0 3px,
+        gold 0 0 3px,
+        gold 0 0 3px;
+}
+
+figure.turnctrl {
+    position: absolute;
+    right: 10%;
+    bottom: 10%;
+}
+
+figure.turnctrl > button {
+    border-radius: 50%;
+    width: 5em;
+    height: 5em;
+    cursor: default;
+    outline: none;
+    color: black;
+    background-color: white;
+    border: none;
+    box-shadow: #ddd 2px 2px 3px;
+}
+
+figure.turnctrl > button:hover {
+    background: linear-gradient(175deg, white 50%, #eee 50%, white 100%);
+}
+
+figure.turnctrl > button:active {
+    background: #eee;
+    box-shadow: #ddd 2px 2px 3px inset;
+}
+
+figure.turnctrl > button.sub {
+    position: absolute;
+    width: 4em;
+    height: 4em;
+    margin: 1em;
+    font-size: 0.8em;
+}
+
+    figure.turnctrl button.sub.btn1.shown {
+        -moz-transform: translate(-100%, -100%);
+        -ms-transform: translate(-100%, -100%);
+        -o-transform: translate(-100%, -100%);
+        -webkit-transform: translate(-100%, -100%);
+        transform: translate(-100%, -100%);
+    }
+
+    figure.turnctrl button.sub.btn2.shown {
+        -moz-transform: translate(-100%, 100%);
+        -ms-transform: translate(-100%, 100%);
+        -o-transform: translate(-100%, 100%);
+        -webkit-transform: translate(-100%, 100%);
+        transform: translate(-100%, 100%);
+    }
+
+    figure.turnctrl button.sub.btn3.shown {
+        -moz-transform: translate(100%, -100%);
+        -ms-transform: translate(100%, -100%);
+        -o-transform: translate(100%, -100%);
+        -webkit-transform: translate(100%, -100%);
+        transform: translate(100%, -100%);
+    }
+
+    figure.turnctrl button.sub.btn4.shown {
+        -moz-transform: translate(100%, 100%);
+        -ms-transform: translate(100%, 100%);
+        -o-transform: translate(100%, 100%);
+        -webkit-transform: translate(100%, 100%);
+        transform: translate(100%, 100%);
+    }
+
+#lstTurnActions {
+    position: absolute;
+    background-color: rgba(105, 105, 105, 0.8);
+    width: auto;
+    border-radius: 5px;
+    text-align: center;
+    padding: 10px 15px 5px 15px;
+    right: 100%;
+    bottom: 100%;
+    -moz-transform-origin: right bottom;
+    -ms-transform-origin: right bottom;
+    -o-transform-origin: right bottom;
+    -webkit-transform-origin: right bottom;
+    transform-origin: right bottom;
+    display: none;
+}
+
+#lstTurnActions li {
+    display: table;
+    padding: 5px;
+}
+
+#lstTurnActions li span {
+    display: table-cell;
+    text-align: left;
+}
+
+#lstTurnActions li span.desc {
+    min-width: 20vw;
+}
+
+#lstTurnActions li span.glyphicon {
+    min-width: 10vw;
+    color: gold;
+}
+
+#lstTurnActions li span.action {
+    min-width: 7vw;
+    text-align: right;
+}
+
+#dlgStatistics canvas {
+    max-width: 100%;
+    min-width: 50vw;
+    max-height: 100%;
+    min-height: 40vh;
+    display: table-cell;
+    vertical-align: middle;
+}
+
+#dlgStatistics ul.tabs {
+    padding: 0;
+    text-align: left;
+    margin-bottom: -4px;
+}
+
+#dlgStatistics ul.tabs li {
+    position: relative;
+    padding: 0.2em 1.5em;
+    margin-right: 1px;
+    border: 1px outset;
+    z-index: 0;
+    display: inline-block;
+    background-color: ThreeDFace;
+}
+
+#dlgStatistics ul.tabs li.active {
+    bottom: 2px;
+    border-bottom: 6px solid ThreeDFace;
+    z-index: 1;
+}
+
+#dlgStatistics .tab-pane {
+    background-color: ThreeDFace;
+    border: 1px outset;
+    margin-bottom: 1em;
+}
+
+#tabStat table {
+    min-width: 50vw;
+    color: black;
+}
+
+#tabTrend {
+    display: table;
+    padding: 1em;
+}
+
+#tabTrend div {
+    display: table-cell;
+    vertical-align: middle;
+    padding: 1em;
+}
+
+.line-legend span {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    margin: 0 0.5em;
 }

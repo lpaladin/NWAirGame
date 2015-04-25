@@ -18,6 +18,11 @@
     <IISExpressUseClassicPipelineMode />
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="fonts\glyphicons-halflings-regular.woff2" />
     <Content Include="Images\app.png" />
     <Content Include="Images\bkg.jpg" />
     <Content Include="Images\Folder_256x256.png" />
@@ -29,11 +34,12 @@
     <Content Include="Images\Icon\2392_ZoomIn_16x16.png" />
     <Content Include="Images\Icon\305_Close_16x16_72.png" />
     <Content Include="Images\Icon\327_Options_16x16_72.png" />
+    <Content Include="Scripts\Chart.js" />
+    <Content Include="Scripts\Chart.min.js" />
     <Content Include="Stylesheets\bootstrap-theme.css" />
     <Content Include="Stylesheets\bootstrap-theme.min.css" />
     <Content Include="Stylesheets\bootstrap.css" />
     <Content Include="Stylesheets\bootstrap.min.css" />
-    <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Icon.png" />
     <Content Include="Scripts\lib\bootstrap.js" />
     <Content Include="Scripts\lib\bootstrap.min.js" />
@@ -68,12 +74,9 @@
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="fonts\glyphicons-halflings-regular.woff2" />
-    <Content Include="fonts\glyphicons-halflings-regular.woff" />
-    <Content Include="fonts\glyphicons-halflings-regular.ttf" />
-    <Content Include="fonts\glyphicons-halflings-regular.eot" />
     <Content Include="Stylesheets\bootstrap-theme.css.map" />
     <Content Include="Stylesheets\bootstrap.css.map" />
+    <Content Include="fonts\metabold-roman_.otf" />
     <None Include="Scripts\lib\jquery-2.1.3.intellisense.js" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
@@ -87,6 +90,7 @@
     <TypeScriptCompile Include="init.ts" />
     <TypeScriptCompile Include="Scripts\helpers.ts" />
     <TypeScriptCompile Include="Scripts\logic.ts" />
+    <TypeScriptCompile Include="Scripts\typings\chartjs\chart.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\greensock\greensock.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\jquery\jquery.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\node-webkit\node-webkit.d.ts" />

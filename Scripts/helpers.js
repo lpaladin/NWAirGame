@@ -8,10 +8,11 @@ var _ = function (a) {
 var dummy = {};
 var Direction;
 (function (Direction) {
-    Direction[Direction["Up"] = 0] = "Up";
-    Direction[Direction["Right"] = 1] = "Right";
-    Direction[Direction["Down"] = 2] = "Down";
-    Direction[Direction["Left"] = 3] = "Left";
+    Direction[Direction["None"] = 0] = "None";
+    Direction[Direction["Up"] = 1] = "Up";
+    Direction[Direction["Right"] = 2] = "Right";
+    Direction[Direction["Down"] = 3] = "Down";
+    Direction[Direction["Left"] = 4] = "Left";
 })(Direction || (Direction = {}));
 /*
  * 让地图平滑移动的控制器。
@@ -38,26 +39,26 @@ var MapMovementController = (function () {
     };
     MapMovementController.moveMap = function (curr) {
         var offset = ui.dMapInner.offset();
-        if (curr.pressedDir[0 /* Up */] == true)
+        if (curr.pressedDir[1 /* Up */] == true)
             if (offset.top <= 0)
                 TweenMax.to(ui.dMapInner, 0.1, { bottom: "-=25" });
             else
-                curr.setDir(0 /* Up */, false);
-        if (curr.pressedDir[2 /* Down */] == true)
+                curr.setDir(1 /* Up */, false);
+        if (curr.pressedDir[3 /* Down */] == true)
             if (parseFloat(ui.dMapInner.css("bottom")) <= 0)
                 TweenMax.to(ui.dMapInner, 0.1, { bottom: "+=25" });
             else
-                curr.setDir(2 /* Down */, false);
-        if (curr.pressedDir[3 /* Left */] == true)
+                curr.setDir(3 /* Down */, false);
+        if (curr.pressedDir[4 /* Left */] == true)
             if (offset.left <= 0)
                 TweenMax.to(ui.dMapInner, 0.1, { left: "+=25" });
             else
-                curr.setDir(3 /* Left */, false);
-        if (curr.pressedDir[1 /* Right */] == true)
+                curr.setDir(4 /* Left */, false);
+        if (curr.pressedDir[2 /* Right */] == true)
             if (offset.left + ui.dMapInner.width() * parseFloat(ui.dMapInner.css("zoom")) >= ui.dMapOuter.width())
                 TweenMax.to(ui.dMapInner, 0.1, { left: "-=25" });
             else
-                curr.setDir(1 /* Right */, false);
+                curr.setDir(2 /* Right */, false);
     };
     return MapMovementController;
 })();
@@ -82,8 +83,23 @@ var ui = {
     dAnimMask: null,
     dStatusInfo: null,
     dlgMapSizeSelect: null,
-    dlgActionModal: null
+    dlgActionModal: null,
+    lstAction: null,
+    sWindDirection: null,
+    icoWindDirection: null,
+    sTurnID: null,
+    sDate: null,
+    panTurnControl: null,
+    lstTurnActions: null,
+    btnCommitedActions: null,
+    sGovernmentFund: null,
+    sResidentAverageHealth: null,
+    dlgStatistics: null,
+    lstPolicy: null,
+    tabStat: null,
+    tabTrend: null
 };
+var colors = ["FFFFFF", "FF0000", "00FF00", "0000FF", "FFFF00", "FF00FF", "00FFFF", "000000", "800000", "008000", "000080", "808000", "800080", "008080", "808080", "C00000", "00C000", "0000C0", "C0C000", "C000C0", "00C0C0", "C0C0C0", "400000", "004000", "000040", "404000", "400040", "004040", "404040", "200000", "002000", "000020", "202000", "200020", "002020", "202020", "600000", "006000", "000060", "606000", "600060", "006060", "606060", "A00000", "00A000", "0000A0", "A0A000", "A000A0", "00A0A0", "A0A0A0", "E00000", "00E000", "0000E0", "E0E000", "E000E0", "00E0E0", "E0E0E0"];
 // 辅助函数所在的静态类
 var Helpers = (function () {
     function Helpers() {
@@ -109,6 +125,16 @@ var Helpers = (function () {
     Helpers.hexDistance = function (row1, col1, row2, col2) {
         var z1 = Math.floor(col1 / 2) + row1, z2 = Math.floor(col2 / 2) + row2, xDelta = Math.abs(col2 - col1), yDelta = Math.abs(z2 - col2 - z1 + col1), zDelta = Math.abs(z2 - z1);
         return Math.max(xDelta, yDelta, zDelta);
+    };
+    Helpers.normalize = function (array) {
+        var max = 0;
+        for (var i = 0; i < array.length; i++)
+            if (array[i] > max)
+                max = array[i];
+        if (max > 0)
+            for (var i = 0; i < array.length; i++)
+                array[i] /= max;
+        return array;
     };
     Helpers.loopThroughHexCircle = function (row, col, func, radius) {
         radius = typeof radius == "number" ? radius : 1;
@@ -136,6 +162,12 @@ var Helpers = (function () {
     };
     Helpers.randInArray = function (array) {
         return array[Math.floor(array.length * Math.random())];
+    };
+    Helpers.accumulate = function (array, from, to) {
+        var result = 0;
+        for (; from < to; from++)
+            result += array[from];
+        return result;
     };
     Helpers.getParticlesAnimation = function (container) {
         var particlesTimeline = new TimelineLite(), i = 150, radius = 900, dots = [], rawDots = [];

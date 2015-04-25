@@ -1,6 +1,10 @@
 ﻿class Arguments {
     public static residentMaxHealth = 10;
+    public static residentInitialAwareness = 0.5;
+    public static hexInitialPollutionControl = 0.5;
+    public static hexInitialEconomy = 0.5;
     public static populationBase = 1000;
+    public static initialFund = 100;
     public static facility2envFriendlyLevelReversed = [ // 设施的逆“环境友好”值
         0, // Natural
         0, // Forest
@@ -10,8 +14,73 @@
         2, // Mine
         1, // EnvironmentalResearch
     ];
+    public static facilityCost: number[][] = [ // 进行该次建造/升级的所需资金
+        [0], // Natural
+        [10, 20, 30, 40, 50, 60], // Forest
+        [100, 40, 90, 160, 250, 360], // ResidentialArea
+        [20, 15, 20, 25], // Parkland
+        [300, 50, 75, 150, 360, 960], // GeneralFactory
+        [100, 300, 500, 700], // Mine
+        [1000, 50, 500, 5000], // EnvironmentalResearch
+    ];
     public static facilityTypeName = "无 林地 居民区 绿地 工厂 矿地 研究所".split(' ');
-    public static gameMapHexMenuActionName = "兴建 升级 行使 收获 毁灭".split(' ');
+    public static gameMapHexMenuActionName = "兴建 升级 实施 收获 毁灭".split(' ');
+    public static directionName = "无 北 东 南 西".split(' ');
+    public static directionWindName = "无风 南风 西风 北风 东风".split(' ');
+    public static directionEngName = "none up right down left".split(' ');
+
+    public static policiesEnd = 5;
+    public static policies: IPolicy[] = [
+        {
+            _cost: -300,
+            _name: "宣传",
+            _hexPropertyNames: ["data._hexResidentAwareness"],
+            _hexPropertyVerbs: ["1 - (1 - x) * (1 - x)"],
+            _glyphicon: "glyphicon-send"
+        },
+        {
+            _cost: -13000,
+            _name: "出资加装过滤设施",
+            _hexPropertyNames: ["data._hexPollutionControl", "data._hexEconomy"],
+            _hexPropertyVerbs: ["1 - (1 - x) * (1 - x)", "0.8 * x"],
+            _glyphicon: "glyphicon-gift"
+        },
+        {
+            _cost: -5000,
+            _name: "强硬管控",
+            _hexPropertyNames: ["data._hexPollutionControl", "data._hexEconomy", "data._hexResidentAwareness"],
+            _hexPropertyVerbs: ["1 - (1 - x) * (1 - x)", "x * x", "x * x"],
+            _glyphicon: "glyphicon-king"
+        },
+        {
+            _cost: -40000,
+            _name: "开发新能源",
+            _hexPropertyNames: ["data._hexPollutionControl", "data._hexResidentAwareness"],
+            _hexPropertyVerbs: ["1 - 0.2 * (1 - x)", "x * x"],
+            _glyphicon: "glyphicon-oil"
+        },
+        {
+            _cost: -100000,
+            _name: "纳米医疗",
+            _hexPropertyNames: ["data._hexResidentHealth"],
+            _hexPropertyVerbs: ["x = " + Arguments.residentMaxHealth],
+            _glyphicon: "glyphicon-plus"
+        },
+        {
+            _cost: 0,
+            _name: "直接开采",
+            _hexPropertyNames: ["data._hexResidentAwareness", "data._hexEconomy"],
+            _hexPropertyVerbs: ["x * x", "1"],
+            _glyphicon: "glyphicon-cog"
+        },
+        {
+            _cost: -50,
+            _name: "保守开采",
+            _hexPropertyNames: ["data._hexEconomy"],
+            _hexPropertyVerbs: ["1 - (1 - x) * (1 - x)"],
+            _glyphicon: "glyphicon-grain"
+        },
+    ];
 }
 
 interface IWithSaveData {
@@ -20,6 +89,14 @@ interface IWithSaveData {
 
 interface ISaveData {
 
+}
+
+interface IPolicy extends ISaveData {
+    _name: string;
+    _hexPropertyNames: string[];
+    _hexPropertyVerbs: string[]; // 谓词语句，x代表属性，用eval执行
+    _cost: number;
+    _glyphicon: string;
 }
 
 interface IGameMap extends ISaveData {
@@ -35,8 +112,12 @@ interface IGameMapHex extends ISaveData {
     _hexFacilityType: FacilityType;
     _hexFacilityLevel: number;
     _hexResidentHealth: number;
+    _hexResidentAwareness: number;
+    _hexPollutionControl: number;
+    _hexEconomy: number;
     _hexPopulation: number; // 人口
     _hexHasAction: boolean;
+    _hexLastPollution: number;
 }
 
 enum FacilityType {
@@ -80,6 +161,13 @@ class GameMapHex implements IWithSaveData {
     public set cloudCount(to: number) {
         if (this.data._cloudCount == to)
             return;
+        if (this.inSetActionState) {
+            this.currentAction.push({
+                _hexPropertyName: 'cloudCount',
+                _hexPropertyValue: to
+            });
+            return;
+        }
         this.elementRef.find("b.glyphicon").remove();
         for (var i = 0; i < to; i++)
             this.elementRef.append('<b class="glyphicon glyphicon-cloud"></b>');
@@ -92,17 +180,56 @@ class GameMapHex implements IWithSaveData {
     public set facilityType(to: FacilityType) {
         if (this.data._hexFacilityType == to)
             return;
+        if (this.inSetActionState) {
+            this.currentAction.push({
+                _hexPropertyName: 'facilityType',
+                _hexPropertyValue: to
+            });
+            return;
+        }
         var tl = new TimelineMax(), icon = this.elementRef.find("span");
+        this.data._hexFacilityLevel = 0;
         if (this.data._hexFacilityType != FacilityType.Natural) {
             tl.to(icon, 0.4, { rotationY: 3600, scale: 4, opacity: 0, ease: Circ.easeIn });
         }
-        if (to != FacilityType.Natural) {
-            icon.find("img").attr("src", this.iconURL);
-            tl.fromTo(icon, 0.4, { rotationX: 0, rotationY: 0, scale: 1, opacity: 0 },
-                { rotationX: 90, opacity: 1, ease: Expo.easeOut });
-        }
         this.data._hexFacilityType = to;
+        if (to != FacilityType.Natural) {
+            tl.call(() => icon.find("img").attr("src", this.iconURL));
+            tl.fromTo(icon, 0.4, { rotationX: 0, rotationY: 0, scale: 1, opacity: 0 },
+                { rotationX: -90, opacity: 1, ease: Expo.easeOut });
+        }
         this.cloudCount = Arguments.facility2envFriendlyLevelReversed[to];
+    }
+
+    public get facilityLevel(): number {
+        return this.data._hexFacilityLevel;
+    }
+    public set facilityLevel(to: number) {
+        if (this.data._hexFacilityType == to)
+            return;
+        if (this.inSetActionState) {
+            this.currentAction.push({
+                _hexPropertyName: 'facilityLevel',
+                _hexPropertyValue: to
+            });
+            return;
+        }
+        var tl = new TimelineMax(), icon = this.elementRef.find("span");
+        icon.find("img").attr("src", this.iconURL);
+        tl.fromTo(icon, 0.4, { rotationX: 0, rotationY: 0, scale: 1, opacity: 0 },
+            { rotationX: -90, opacity: 1, ease: Expo.easeOut });
+        this.data._hexFacilityLevel = to;
+    }
+
+    public set applyPolicy(policy: IPolicy) {
+        if (!this.inSetActionState) {
+            return;
+        }
+        for (var i = 0; i < policy._hexPropertyNames.length; i++)
+            this.currentAction.push({
+                _hexPropertyName: policy._hexPropertyNames[i],
+                _hexPropertyValue: (new Function("x", "return " + policy._hexPropertyVerbs[i]))(eval("this." + policy._hexPropertyNames[i]))
+            });
     }
 
     private static _selectedHex: GameMapHex;
@@ -177,22 +304,60 @@ class GameMapHex implements IWithSaveData {
         return (this.data._hexFacilityLevel + 1) + "级" + Arguments.facilityTypeName[this.facilityType];
     }
 
+    private inSetActionState: boolean;
+    private currentAction: IAtomicAction[];
+
+    public beginRecordAction(): void {
+        this.inSetActionState = true;
+        this.currentAction = [];
+    }
+
+    public endRecordAndGenerateAction(name: string, diff: number, addPolicy?: IPolicy, tag?: number, removePolicy?: number): ITurnAction {
+        this.data._hexHasAction = true;
+        this.elementRef.addClass("has-action");
+        this.selected = !this.selected;
+        this.selected = !this.selected;
+        
+        var action: ITurnAction = {
+            _list: this.currentAction,
+            _name: name,
+            _target: `[${ this.row }][${ this.col }]`,
+            _cashDiff: diff,
+            _addPolicy: addPolicy,
+            _tag: tag,
+            _removePolicy: removePolicy
+        };
+        this.inSetActionState = false;
+        return action;
+    }
+
+    public setNoAction(): void {
+        this.data._hexHasAction = false;
+        this.elementRef.removeClass("has-action");
+        this.selected = !this.selected;
+        this.selected = !this.selected;
+    }
+
     private healthGauge: JQuery;
 
-    public constructor(public data: IGameMapHex, private elementRef: JQuery, popup: JQuery) {
+    public constructor(public data: IGameMapHex, private elementRef: JQuery, popup: JQuery, dummy?: boolean) {
         this.data = data;
 
         for (var i = 0; i < this.data._cloudCount; i++)
             this.elementRef.append('<b class="glyphicon glyphicon-cloud"></b>');
         if (this.facilityType != FacilityType.Natural)
             this.elementRef.append(`<span><img src="${ this.iconURL }" /></span>`);
+        else
+            this.elementRef.append(`<span><img src="" /></span>`);
         this.elementRef.append(this.healthGauge = $('<meter class="health-gauge x-billboard"></meter>').attr({
             low: Arguments.residentMaxHealth * 0.4,
             max: Arguments.residentMaxHealth,
             value: this.data._hexResidentHealth
         }).text(`${ this.data._hexResidentHealth } / ${ Arguments.residentMaxHealth }`));
 
-        ui.dMapView.append(elementRef);
+        if (this.data._hexHasAction)
+            this.elementRef.addClass("has-action");
+
         this.fnMouseEnter = (e) => {
             var currOffset = this.elementRef.offset();
             var css: any = {
@@ -233,9 +398,41 @@ class GameMapHex implements IWithSaveData {
                 GameMapHex.callContextMenu(e.clientX, e.clientY);
             }
         };
-        elementRef.hover(this.fnMouseEnter, this.fnMouseLeave)
-            .mousedown((e) => TweenMax.to(elementRef, 0.1, { z: 5, className: "+=blur" }))
-            .mouseup(this.fnMouseUp);
+        if (!dummy)
+            elementRef.hover(this.fnMouseEnter, this.fnMouseLeave)
+                .mousedown((e) => TweenMax.to(elementRef, 0.1, { z: 5, className: "+=blur" }))
+                .mouseup(this.fnMouseUp);
+    }
+
+    private get polluteLevel(): number {
+        return Arguments.facility2envFriendlyLevelReversed[this.facilityType] * (this.facilityLevel + 1) * (1 - this.data._hexPollutionControl) / 18;
+    }
+
+    public moveToNextTurn(hexWindSource: GameMapHex): number {
+        if (this.data._hexResidentHealth <= 0) {
+            this.data._hexResidentHealth = 0;
+            return 0;
+        }
+        var rawLv = this.polluteLevel + (hexWindSource ? hexWindSource.data._hexLastPollution : 0) / 2, staminaRatio = this.data._hexPopulation / Arguments.populationBase;
+        this.cloudCount = Math.floor(rawLv * 3);
+        this.data._hexResidentAwareness = 1 - (1 - this.data._hexResidentAwareness) * rawLv / staminaRatio;
+        this.data._hexEconomy = this.data._hexEconomy * this.data._hexResidentAwareness * staminaRatio * (this.facilityType == FacilityType.GeneralFactory ? 1 : 0.1) + this.facilityLevel / 6;
+        this.data._hexPopulation = Math.floor(this.data._hexPopulation * (1.1 - Math.sqrt(rawLv)));
+        this.data._hexPollutionControl *= this.data._hexResidentAwareness;
+        this.data._hexResidentHealth -= Math.round(rawLv * Math.sqrt(staminaRatio) * 10) * 0.01;
+        this.data._hexHasAction = false;
+        this.elementRef.removeClass("has-action");
+        return this.data._hexEconomy;
+    }
+
+    public saveLastPollutionLevel(): void {
+        this.data._hexLastPollution = this.polluteLevel;
+    }
+
+    public accumulateHistory(history: IHistoryData): void {
+        history.avgHealth += this.data._hexResidentHealth;
+        history.pollution += this.data._hexLastPollution;
+        history.population += this.data._hexPopulation;
     }
 }
 
@@ -285,25 +482,159 @@ class GameMap implements IWithSaveData {
         }
     }
 
+    public applyAction(action: ITurnAction): void {
+        for (var i = 0; i < action._list.length; i++) {
+            var atom = action._list[i];
+            eval(`this.map${action._target }.${ atom._hexPropertyName } = ${ atom._hexPropertyValue }`);
+        }
+    }
+
+    public setNoAction(action: ITurnAction): void {
+        eval(`this.map${ action._target }.setNoAction()`);
+    }
+
+    public nextTurn(wind: Direction): number {
+        var sum = 0;
+        for (var i = 0; i < this.mapHeight; i++)
+            for (var j = 0; j < this.mapWidth; j++) {
+                if (wind == Direction.Down && i > 0)
+                    sum += this.map[i][j].moveToNextTurn(this.map[i - 1][j]);
+                else if (wind == Direction.Up && i < this.mapHeight - 1)
+                    sum += this.map[i][j].moveToNextTurn(this.map[i + 1][j]);
+                else if (wind == Direction.Left && j > 0)
+                    sum += this.map[i][j].moveToNextTurn(this.map[i][j - 1]);
+                else if (wind == Direction.Right && j < this.mapWidth - 1)
+                    sum += this.map[i][j].moveToNextTurn(this.map[i][j + 1]);
+                else
+                    sum += this.map[i][j].moveToNextTurn(null);
+            }
+        for (var i = 0; i < this.mapHeight; i++)
+            for (var j = 0; j < this.mapWidth; j++)
+                this.map[i][j].saveLastPollutionLevel();
+        return sum;
+    }
+
+    public accumlateHistory(history: IHistoryData): void {
+        for (var i = 0; i < this.mapHeight; i++)
+            for (var j = 0; j < this.mapWidth; j++) {
+                this.map[i][j].accumulateHistory(history);
+            }
+    }
 }
 
-
-interface ITurnAction extends ISaveData {
+interface IAtomicAction {
     _hexPropertyName: string;
     _hexPropertyValue: any;
 }
 
+interface ITurnAction extends ISaveData {
+    _list: IAtomicAction[];
+    _target: string;
+    _name: string;
+    _cashDiff: number;
+    _addPolicy: IPolicy;
+    _tag: number;
+    _removePolicy: number;
+}
+
+interface IWeatherModel extends ISaveData {
+    _b: number;
+    _c: number;
+    _threshold: number;
+}
+
+interface IHistoryData extends ISaveData {
+    fundIncome: number;
+    avgHealth: number;
+    population: number;
+    pollution: number;
+    actionFundConsume: number;
+}
+
+interface IStatistics extends ISaveData {
+    counts: {
+        builds: number;
+        destorys: number;
+        upgrades: number;
+        exploits: number;
+        applys: number;
+    };
+    gameRealTimeEslapsed: number;
+    accumlatedHistory: IHistoryData[];
+}
+
 interface IWorldData extends ISaveData {
     gameMap: IGameMap;
+    stat: IStatistics;
     actions: ITurnAction[];
+    mdlWeather: IWeatherModel;
+    lstAvailablePolicies: IPolicy[];
+    _turnID: number;
     _fund: number;
+    _currentWindDirection: Direction;
+    _beginDay: { month: number; day: number; };
 }
 
 class WorldDevelopmentModel implements IWithSaveData {
-    private gameMap: GameMap;
+    public gameMap: GameMap;
 
     public constructor(public data: IWorldData) {
         this.gameMap = new GameMap(data.gameMap);
+    }
+
+    public nextTurn(): void {
+        var history: IHistoryData = {
+            actionFundConsume: 0,
+            avgHealth: 0,
+            pollution: 0,
+            population: 0,
+            fundIncome: 0
+        };
+
+        for (var i = 0; i < this.data.actions.length; i++) {
+            var action = this.data.actions[i];
+            if (action._addPolicy)
+                this.data.lstAvailablePolicies.push(action._addPolicy);
+            else if (action._removePolicy != undefined && action._removePolicy != null)
+                this.data.lstAvailablePolicies.splice(action._removePolicy);
+
+            switch (action._tag) {
+                case GameMapHexMenuActions.ApplyPolicy:
+                    this.data.stat.counts.applys++;
+                    break;
+                case GameMapHexMenuActions.Build:
+                    this.data.stat.counts.builds++;
+                    break;
+                case GameMapHexMenuActions.Destroy:
+                    this.data.stat.counts.destorys++;
+                    break;
+                case GameMapHexMenuActions.Upgrade:
+                    this.data.stat.counts.upgrades++;
+                    break;
+                case GameMapHexMenuActions.Exploit:
+                    this.data.stat.counts.exploits++;
+                    break;
+            }
+
+            this.gameMap.applyAction(action);
+            this.data._fund += action._cashDiff;
+            history.actionFundConsume += -action._cashDiff;
+        }
+        this.data.actions = [];
+
+        var diff = Math.floor(this.gameMap.nextTurn(this.data._currentWindDirection) * 10);
+        this.gameMap.accumlateHistory(history);
+        this.data._fund += diff;
+        history.fundIncome = diff;
+        this.data.stat.accumlatedHistory.push(history);
+
+        var val = Math.sin(this.data.mdlWeather._b * this.data._turnID + this.data.mdlWeather._c);
+        if (val > this.data.mdlWeather._threshold || val < -this.data.mdlWeather._threshold)
+            this.data._currentWindDirection = Direction.None;
+        else
+            this.data._currentWindDirection = Math.floor((val + this.data.mdlWeather._threshold + 1) * 2 / this.data.mdlWeather._threshold);
+
+        this.data._turnID++;
     }
 
     public static generateNew(_mapHeight: number, _mapWidth: number): WorldDevelopmentModel {
@@ -314,8 +645,31 @@ class WorldDevelopmentModel implements IWithSaveData {
         };
         var worldData: IWorldData = {
             gameMap: mapData,
+            mdlWeather: {
+                _b: Helpers.randBetween(0.2, 0.5, false),
+                _c: Helpers.randBetween(-100, 100, true),
+                _threshold: Helpers.randBetween(0.9, 1, false)
+            },
             actions: [],
-            _fund: 0
+            lstAvailablePolicies: [],
+            stat: {
+                accumlatedHistory: [],
+                counts: {
+                    applys: 0,
+                    builds: 0,
+                    destorys: 0,
+                    exploits: 0,
+                    upgrades: 0
+                },
+                gameRealTimeEslapsed: 0
+            },
+            _beginDay: {
+                month: Helpers.randBetween(1, 13, true),
+                day: Helpers.randBetween(1, 31, true)
+            },
+            _fund: Arguments.initialFund * _mapHeight * _mapWidth,
+            _turnID: 0,
+            _currentWindDirection: Direction.None
         };
 
         // 世界生成器 [version 1]
@@ -351,13 +705,17 @@ class WorldDevelopmentModel implements IWithSaveData {
                     facilityLevel = Helpers.randBetween(0, 3, true);
 
                 mapData.map[row][col] = {
+                    _hexResidentAwareness: Arguments.residentInitialAwareness,
                     _row: row,
                     _col: col,
                     _cloudCount: Arguments.facility2envFriendlyLevelReversed[facilityType],
                     _hexFacilityLevel: facilityLevel,
                     _hexFacilityType: facilityType,
                     _hexResidentHealth: health,
+                    _hexEconomy: Arguments.hexInitialEconomy,
+                    _hexPollutionControl: Arguments.hexInitialPollutionControl,
                     _hexPopulation: (template[row][col] + 1) * Arguments.populationBase + Helpers.randBetween(-Arguments.populationBase, Arguments.populationBase, true),
+                    _hexLastPollution: 0,
                     _hexHasAction: false
                 };
             }

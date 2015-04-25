@@ -9,7 +9,7 @@ interface IUniqueSet {
 }
 
 enum Direction {
-    Up, Right, Down, Left
+    None, Up, Right, Down, Left
 }
 
 declare var frame;
@@ -83,8 +83,32 @@ var ui = {
     dAnimMask: <JQuery> null,
     dStatusInfo: <JQuery> null,
     dlgMapSizeSelect: <JQuery> null,
-    dlgActionModal: <JQuery> null
+    dlgActionModal: <JQuery> null,
+    lstAction: <JQuery> null,
+    sWindDirection: <JQuery> null,
+    icoWindDirection: <JQuery> null,
+    sTurnID: <JQuery> null,
+    sDate: <JQuery> null,
+    panTurnControl: <JQuery> null,
+    lstTurnActions: <JQuery> null,
+    btnCommitedActions: <JQuery> null,
+    sGovernmentFund: <JQuery> null,
+    sResidentAverageHealth: <JQuery> null,
+    dlgStatistics: <JQuery> null,
+    lstPolicy: <JQuery> null,
+    tabStat: <JQuery> null,
+    tabTrend: <JQuery> null
 };
+
+var colors = ["FFFFFF",
+    "FF0000", "00FF00", "0000FF", "FFFF00", "FF00FF", "00FFFF", "000000",
+    "800000", "008000", "000080", "808000", "800080", "008080", "808080",
+    "C00000", "00C000", "0000C0", "C0C000", "C000C0", "00C0C0", "C0C0C0",
+    "400000", "004000", "000040", "404000", "400040", "004040", "404040",
+    "200000", "002000", "000020", "202000", "200020", "002020", "202020",
+    "600000", "006000", "000060", "606000", "600060", "006060", "606060",
+    "A00000", "00A000", "0000A0", "A0A000", "A000A0", "00A0A0", "A0A0A0",
+    "E00000", "00E000", "0000E0", "E0E000", "E000E0", "00E0E0", "E0E0E0"];
 
 // 辅助函数所在的静态类
 class Helpers {
@@ -217,6 +241,17 @@ class Helpers {
         return Math.max(xDelta, yDelta, zDelta);
     }
 
+    public static normalize(array: number[]): number[]{
+        var max = 0;
+        for (var i = 0; i < array.length; i++)
+            if (array[i] > max)
+                max = array[i];
+        if (max > 0)
+            for (var i = 0; i < array.length; i++)
+                array[i] /= max;
+        return array;
+    }
+
     public static loopThroughHexCircle(row: number, col: number, func: (row: number, col: number) => void, radius?: number): void {
         radius = typeof radius == "number" ? radius : 1;
         for (var x = col - radius - 1; x <= col + radius + 1; x++)
@@ -247,6 +282,13 @@ class Helpers {
 
     public static randInArray<T>(array: Array<T>): T {
         return array[Math.floor(array.length * Math.random())];
+    }
+
+    public static accumulate(array: number[], from: number, to: number): number {
+        var result = 0;
+        for (; from < to; from++)
+            result += array[from];
+        return result;
     }
 
     public static getParticlesAnimation(container: JQuery) {

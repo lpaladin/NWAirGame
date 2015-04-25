@@ -12,6 +12,7 @@
     <script src="/Scripts/lib/TweenMax.min.js"></script>
     <script src="/Scripts/lib/utils/Draggable.min.js"></script>
     <script src="/Scripts/lib/jquery.gsap.min.js"></script>
+    <script src="/Scripts/Chart.min.js"></script>
     <script src="/Scripts/helpers.js"></script>
     <script src="/Scripts/logic.js"></script>
     <script src="/gameframe.js"></script>
@@ -26,10 +27,10 @@
                     周昊宇
                 </p>
                 <p class="animate-in">
-                    虚位以待
+                    姜皓云
                 </p>
                 <p class="animate-in">
-                    虚位以待
+                    张　睿
                 </p>
                 <h3 class="animate-in-alt">利用框架</h3>
                 <p class="animate-in">
@@ -43,7 +44,12 @@
                 </p>
             </div>
         </section>
-        <section id="dGameStory" style="display: none"></section>
+        <section id="dGameStory" style="display: none">
+            <p>story1</p>
+            <p>story2</p>
+            <p>story3</p>
+            <p>story4</p>
+        </section>
         <section id="dGameMain" style="display: none">
             <div id="dMapView">
                 <div id="dMapOuter">
@@ -56,28 +62,86 @@
                 <figure class="dirctrl bottom" data-dir="Down"></figure>
                 <figure class="dirctrl left" data-dir="Left"></figure>
                 <figure class="dirctrl right" data-dir="Right"></figure>
+                <figure class="turnctrl" id="panTurnControl">
+                    <button class="sub btn1" id="btnCommitedActions" >动作<span class="badge">4</span></button>
+                    <button class="sub btn3" id="btnStatistics" onclick="frame.summonStatistics()">概览</button>
+                    <button id="btnEndTurn" onclick="frame.nextTurn()">回合结束！</button>
+                    <ul id="lstTurnActions">
+                        
+                    </ul>
+                </figure>
             </div>
-            <div id="dStatusInfo">
-                <div class="row">
-                    <label class="col-xs-4">缩放</label>
-                    <div class="col-xs-8">
-                        <input id="sldZoom" type="range" value="1" min="0.5" max="2" step="0.1" onchange="ui.dMapInner.css('zoom', this.value)" />
+            <div id="dlgStatistics" class="dialog-body" style="display: none">
+                <header>游戏概览</header>
+                <ul class="tabs single-select">
+                    <li class="active" data-target="#tabTrendWrapper" data-toggle="tab">趋势</li><!--
+                 --><li data-target="#tabStat" data-toggle="tab">统计</li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade active in" id="tabTrendWrapper">
+                        <div id="tabTrend">
+                            <canvas id="canvasTrend" width="400" height="300"></canvas>
+                            <div></div>
+                        </div>
                     </div>
+                    <div class="tab-pane fade" id="tabStat">
+                    </div>
+                </div>
+                <p>
+                    <button class="classic cancel">关闭</button>
+                </p>
+            </div>
+            <div id="dStatusInfoOverlay">
+                <div class="hidden">
+                    <input id="sldZoom" type="range" value="1" min="0.5" max="2" step="0.1" onchange="ui.dMapInner.css('zoom', this.value)" />
+                </div>
+                <div class="upper-left">
+                    <p class="deepskyblue bottom-only">
+                        <label><span class="glyphicon glyphicon-calendar"></span></label><!--
+                     --><span><span id="sDate">六月十二</span> <span id="sWindDirection">-</span> <span id="icoWindDirection" class="wind glyphicon glyphicon-arrow-up"></span></span>
+                    </p>
+                    <p class="mediumseagreen bottom-only">
+                        <label><span class="glyphicon glyphicon-hourglass"></span></label><span id="sTurnID">第 0 回合</span>
+                    </p>
+                </div>
+                <div class="upper-right">
+                    <p class="gold">
+                        <label><span class="glyphicon glyphicon-piggy-bank"></span> 政府资金</label><span id="sGovernmentFund">2333</span>
+                    </p>
+                    <p class="indianred">
+                        <label><span class="glyphicon glyphicon-heart"></span> 居民平均健康水平</label><span id="sResidentAverageHealth">10 / 10</span>
+                    </p>
                 </div>
             </div>
         </section>
         <aside></aside>
+        <section id="dlgActionModal" style="display: none">
+            <div class="dialog-body">
+                <header>标题</header>
+                <div class="hex-status">
+                    <div class="clearfix">
+                        <div class="hex-container"></div>
+                    </div>
+                    <div class="hex-summary"></div>
+                </div>
+                <ul id="lstAction" class="action-list single-select clearfix"></ul>
+                <ul id="lstPolicy" class="action-list single-select clearfix"></ul>
+                <p>
+                    <button class="classic" onclick="frame.onActionModalResult(true)">确认</button>
+                    <button class="classic" onclick="frame.onActionModalResult(false)">放弃</button>
+                </p>
+            </div>
+        </section>
         <section id="dGameMenu" style="display: none">
             <div id="dTitle">
-                <h1 class="superShadow">AppTitle</h1>
-                <h2>AppSubTitle</h2>
+                <h1 class="superShadow">战霾</h1>
+                <h2>政府视角下的监控治理</h2>
             </div>
             <ul class="hl-style-menu" id="mnuMainMenu">
                 <li class="intro-ingame-toggle" data-action="resumeGame">继续游戏</li>
                 <li class="show" data-action="beginGame">新游戏</li>
                 <li class="show" data-action="loadGame">载入进度</li>
                 <li class="intro-ingame-toggle" data-action="saveGame">保存进度</li>
-                <li class="show" data-action="test">调试用</li>
                 <li class="show" data-action="about">关于游戏</li>
                 <li class="show" data-action="exit">退出游戏</li>
             </ul>
@@ -117,8 +181,8 @@
                 <h3>作者名单</h3>
                 <p class="animate-in">
                     <a href="mailto:zhy.zbklqx@Gmail.com">周昊宇</a>&nbsp;&nbsp;&nbsp;&nbsp;
-                    虚位以待&nbsp;&nbsp;&nbsp;&nbsp;
-                    虚位以待
+                    姜皓云&nbsp;&nbsp;&nbsp;&nbsp;
+                    张　睿
                 </p>
                 <hr />
                 <h3>采用技术、语言和开发环境</h3>
@@ -131,31 +195,6 @@
                 <h4>2015 年 4 月</h4>
             </div>
             <button class="classic" onclick="frame.changeUIScene(uiScenes.sGameMenu)">返回</button>
-        </section>
-        <section id="dlgActionModal" style="display: none">
-            <div class="dialog-body">
-                <header>标题</header>
-                <div class="hex-status">
-                    <div class="clearfix">
-                        <div class="hex-container"></div>
-                    </div>
-                    <div class="hex-summary"></div>
-                </div>
-                <p>
-                    <button class="classic" onclick="frame.onActionModalResult({})">确认</button>
-                    <button class="classic" onclick="frame.onActionModalResult(null)">放弃</button>
-                </p>
-            </div>
-        </section>
-        <section id="dlgModal" style="display: none">
-            <div class="dialog-body">
-                <header>标题</header>
-                <p class="message">这里是对话框的消息</p>
-                <p>
-                    <button class="classic" onclick="frame.onModalResult(true)">确认</button>
-                    <button class="classic" onclick="frame.onModalResult(false)">放弃</button>
-                </p>
-            </div>
         </section>
         <section id="dLoading" style="display: none">
             <div class="centered">
@@ -171,6 +210,16 @@
             <header class="centered"><span>请</span><span>稍</span><span>候</span></header>
         </section>
         <section id="dAnimMask"></section>
+        <section id="dlgModal" style="display: none">
+            <div class="dialog-body">
+                <header>标题</header>
+                <p class="message">这里是对话框的消息</p>
+                <p>
+                    <button class="classic" onclick="frame.onModalResult(true)">确认</button>
+                    <button class="classic" onclick="frame.onModalResult(false)">放弃</button>
+                </p>
+            </div>
+        </section>
         <figure id="panPlayControl" class="btn-group" style="display: none">
             <button class="btn btn-default" onclick="frame.animResume()"><span class="glyphicon glyphicon-play"></span></button>
             <button class="btn btn-default" onclick="frame.changeSpeed(5)"><span class="glyphicon glyphicon-fire"></span></button>

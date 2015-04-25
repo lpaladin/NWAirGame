@@ -2,6 +2,9 @@
 import fs = require('fs');
 import promise = require('typescript-deferred');
 var wnd = gui.Window.get();
+wnd.height = 600;
+wnd.width = 800;
+wnd.setPosition("center");
 
 var mnuHex = new gui.Menu();
 
@@ -50,6 +53,7 @@ class GameFrame {
     private lastRoot: TimelineLite;
     private currentUIScene: UIScene;
     private static _init: boolean;
+    private chartTrend: LinearInstance;
 
     public mapViewAngle: number;
 
@@ -59,29 +63,52 @@ class GameFrame {
         GameFrame._init = true;
 
         mnuHex.append(new gui.MenuItem({
-            label: "　兴建", icon: "/Images/Icon/112_Plus_Green_16x16_72.png",
+            label: "　" + Arguments.gameMapHexMenuActionName[GameMapHexMenuActions.Build], icon: "/Images/Icon/112_Plus_Green_16x16_72.png",
             click: () => this.hexMenuCall(GameMapHexMenuActions.Build)
         }));
         mnuHex.append(new gui.MenuItem({
-            label: "　升级", icon: "/Images/Icon/Gear.png",
+            label: "　" + Arguments.gameMapHexMenuActionName[GameMapHexMenuActions.Upgrade], icon: "/Images/Icon/Gear.png",
             click: () => this.hexMenuCall(GameMapHexMenuActions.Upgrade)
         }));
         mnuHex.append(new gui.MenuItem({
-            label: "　行使", icon: "/Images/Icon/1683_Lightbulb_16x16.png",
+            label: "　" + Arguments.gameMapHexMenuActionName[GameMapHexMenuActions.ApplyPolicy], icon: "/Images/Icon/1683_Lightbulb_16x16.png",
             click: () => this.hexMenuCall(GameMapHexMenuActions.ApplyPolicy)
         }));
         mnuHex.append(new gui.MenuItem({
-            label: "　开采", icon: "/Images/Icon/Annotation_New.png",
+            label: "　" + Arguments.gameMapHexMenuActionName[GameMapHexMenuActions.Exploit], icon: "/Images/Icon/Annotation_New.png",
             click: () => this.hexMenuCall(GameMapHexMenuActions.Exploit)
         }));
         mnuHex.append(new gui.MenuItem({
-            label: "　毁灭", icon: "/Images/Icon/305_Close_16x16_72.png",
+            label: "　" + Arguments.gameMapHexMenuActionName[GameMapHexMenuActions.Destroy], icon: "/Images/Icon/305_Close_16x16_72.png",
             click: () => this.hexMenuCall(GameMapHexMenuActions.Destroy)
         }));
         GameMapHex.callContextMenu = (x: number, y: number) =>
             mnuHex.popup(x, y);
         GameMapHex.setContextMenuEnabled = (type: GameMapHexMenuActions, to: boolean) =>
             mnuHex.items[type].enabled = to;
+
+        this.sampleHex = [];
+        for (var i = 1; i < Arguments.facilityTypeName.length; i++) {
+            var $ele = $('<figure class="tile hexagon"><em></em></figure>');
+            ui.lstAction.append($("<li></li>").data("result", i)
+                .append($('<div class="hex-container"></div>').append($ele))
+                .append(`<p>${ Arguments.facilityTypeName[i] }</p>`)
+                .append(`<p><span class="glyphicon glyphicon-piggy-bank"></span> 需要 ${ Arguments.facilityCost[i][0] }</p>`));
+            this.sampleHex[i] = new GameMapHex({
+                _row: -1,
+                _col: -1,
+                _cloudCount: Arguments.facility2envFriendlyLevelReversed[i],
+                _hexFacilityLevel: 0,
+                _hexEconomy: 0,
+                _hexPollutionControl: 0,
+                _hexResidentAwareness: 0,
+                _hexFacilityType: i,
+                _hexResidentHealth: Arguments.residentMaxHealth,
+                _hexLastPollution: 0,
+                _hexPopulation: 0,
+                _hexHasAction: false
+            }, $ele, $(), true);
+        }
     }
     
     public loadProgress(id: string): boolean {
@@ -92,12 +119,16 @@ class GameFrame {
         this.pushMessage(MessageType.Information, "进度读取成功。");
         ui.dlgLoadProgress.fadeOut();
         this.initializeVisual();
+        this.loading = false;
         this.changeUIScene(uiScenes.sGameMain, { skipIntro: true })
             .call(() => this.inGame = true);
         return true;
     }
 
     private _realSave(id: string, callback?: Function): void {
+        var timeElapsed = Math.floor((new Date().getTime() - this.clock.getTime()) / 60000);
+        this.clock = new Date();
+        this.stateData.stat.gameRealTimeEslapsed += timeElapsed;
         this.pushMessage(MessageType.Information, "保存中，请稍候……");
         wnd.capturePage((buffer) => {
             fs.writeFileSync("./UserData/save" + id + ".sav", JSON.stringify(this.stateData), { encoding: "utf8" });
@@ -151,37 +182,256 @@ class GameFrame {
         TimelineLite.exportRoot().timeScale(to);
     }
 
+    public nextTurn(): void {
+        var sum = 0;
+        for (var i = 0; i < this.stateData.actions.length; i++)
+            sum += this.stateData.actions[i]._cashDiff;
+        if (this.stateData._fund + sum < 0) {
+            this.pushMessage(MessageType.Warning, "政府资金不足！");
+            return;
+        }
+        this.loading = true;
+        this.logicModule.nextTurn();
+        this.updateVisual();
+        GameMapHex.selectedHex = null;
+        ui.btnCommitedActions.find(".badge").hide();
+        ui.lstTurnActions.html("").hide();
+        GameMapHex.selectedHex && (GameMapHex.selectedHex.selected = false);
+        setTimeout(() => this.loading = false, Helpers.randBetween(1000, 2000, true));
+    }
+
     public hexMenuCall(type: GameMapHexMenuActions): void {
         var currentHex = GameMapHex.selectedHex, cb;
+        currentHex.inflateActionModal(ui.dlgActionModal.find(".hex-status"));
         switch (type) {
             case GameMapHexMenuActions.Build:
-                cb = (result) => 0;
+                ui.lstAction.show();
+                ui.lstPolicy.hide();
+                cb = (result) => {
+                    currentHex.beginRecordAction();
+                    currentHex.facilityType = result;
+                    this.saveAction(currentHex.endRecordAndGenerateAction("兴建一座" + Arguments.facilityTypeName[result], -Arguments.facilityCost[result][0], null, GameMapHexMenuActions.Build));
+                };
+                break;
+            case GameMapHexMenuActions.Upgrade:
+                ui.lstAction.hide();
+                ui.lstPolicy.hide();
+                ui.dlgActionModal.find(".hex-status .hex-summary").append(`<p><span class="glyphicon glyphicon-piggy-bank"></span> 耗费 ${ Arguments.facilityCost[currentHex.facilityType][currentHex.facilityLevel]}</p>`);
+                cb = (result) => {
+                    currentHex.beginRecordAction();
+                    currentHex.facilityLevel++;
+                    this.saveAction(currentHex.endRecordAndGenerateAction("升级" + currentHex.facilityName, -Arguments.facilityCost[currentHex.facilityType][currentHex.facilityLevel], null, GameMapHexMenuActions.Upgrade));
+                };
+                break;
             case GameMapHexMenuActions.Destroy:
+                ui.lstAction.hide();
+                ui.lstPolicy.hide();
+                var gain = Helpers.accumulate(Arguments.facilityCost[currentHex.facilityType], 0, currentHex.facilityLevel) / 3;
+                ui.dlgActionModal.find(".hex-status .hex-summary").append(`<p><span class="glyphicon glyphicon-piggy-bank"></span> 获得 ${ gain }</p>`);
+                cb = (result) => {
+                    currentHex.beginRecordAction();
+                    currentHex.facilityType = FacilityType.Natural;
+                    this.saveAction(currentHex.endRecordAndGenerateAction("拆除" + currentHex.facilityName, gain, null, GameMapHexMenuActions.Destroy));
+                };
+                break;
+            case GameMapHexMenuActions.Exploit:
+                ui.lstAction.hide();
+                ui.lstPolicy.show().html("");
+                if (currentHex.facilityType == FacilityType.EnvironmentalResearch)
+                    for (var i = 0; i < currentHex.facilityLevel + 1; i++)
+                        ui.lstPolicy.append($("<li></li>").data("result", i)
+                            .append(`<p><span class="glyphicon ${ Arguments.policies[i]._glyphicon }"></span> ${ Arguments.policies[i]._name } 政策</p>`)
+                            .append(`<p><span class="glyphicon glyphicon-piggy-bank"></span> 研发 ${ -Arguments.policies[i]._cost / 10 } 实施 ${ -Arguments.policies[i]._cost }</p>`));
+                else
+                    for (var i = Arguments.policiesEnd; i < Arguments.policies.length; i++)
+                        ui.lstPolicy.append($("<li></li>").data("result", i)
+                            .append(`<p><span class="glyphicon ${ Arguments.policies[i]._glyphicon }"></span> ${ Arguments.policies[i]._name }</p>`)
+                            .append(`<p><span class="glyphicon glyphicon-piggy-bank"></span> 需要 ${ -Arguments.policies[i]._cost }</p>`));
+
+                cb = (result) => {
+                    currentHex.beginRecordAction();
+                    if (currentHex.facilityType == FacilityType.EnvironmentalResearch)
+                        this.saveAction(currentHex.endRecordAndGenerateAction("研发" + Arguments.policies[result]._name, Arguments.policies[result]._cost / 10, Arguments.policies[result], GameMapHexMenuActions.Exploit));
+                    else
+                        this.saveAction(currentHex.endRecordAndGenerateAction("进行" + Arguments.policies[result]._name, Arguments.policies[result]._cost, Arguments.policies[result], GameMapHexMenuActions.Exploit));
+                };
+                break;
+            case GameMapHexMenuActions.ApplyPolicy:
+                ui.lstAction.hide();
+                ui.lstPolicy.show().html("");
+                for (var i = 0; i < this.stateData.lstAvailablePolicies.length; i++)
+                    ui.lstPolicy.append($("<li></li>").data("result", i)
+                        .append(`<p><span class="glyphicon ${ Arguments.policies[i]._glyphicon }"></span> ${ this.stateData.lstAvailablePolicies[i]._name }</p>`)
+                        .append(`<p><span class="glyphicon glyphicon-piggy-bank"></span> 耗费 ${ -this.stateData.lstAvailablePolicies[i]._cost }</p>`));
+                cb = (result) => {
+                    currentHex.beginRecordAction();
+                    currentHex.applyPolicy = this.stateData.lstAvailablePolicies[result];
+                    this.saveAction(currentHex.endRecordAndGenerateAction("实施" + this.stateData.lstAvailablePolicies[result]._name, this.stateData.lstAvailablePolicies[result]._cost, null, GameMapHexMenuActions.ApplyPolicy, result));
+                };
+                break;
 
         }
         this.showActionModal(type, currentHex, cb);
     }
 
-    public initializeVisual(): void {
-        frame.mapViewAngle = 60;
+    private saveAction(action: ITurnAction): void {
+        this.stateData.actions.push(action);
+        ui.lstTurnActions.show();
+        ui.btnCommitedActions.find(".badge").show().text(this.stateData.actions.length);
+        // 往动作列表里加
+        ui.lstTurnActions.append(`<li>
+            <span class="desc">${ action._name }</span>
+            <span class="glyphicon glyphicon-piggy-bank"> ${ action._cashDiff }</span>
+            <span class="action"><button class="classic" onclick="frame.removeActionAt(${ this.stateData.actions.length - 1 })">取消</button></span></li>`);
+    }
 
-        // 构造云层
-        ui.dMapInner.find("b.cloud-layer").remove();
-        for (var i = Helpers.randBetween(3, 6, true); i >= 0; i--) {
-            var layer = $(`<b class="bkg3d-infinite cloud-layer" style="bottom: ${ Helpers.randBetween(0, 101, true) }%"></b>`);
-            for (var j = Helpers.randBetween(3, 6, true); j >= 0; j--)
-                layer.append($('<img class="x-billboard-90" src="/Images/cloud.png" />').css({
-                    animation: `cloud-float ${ Helpers.randBetween(30, 60, true) }s linear infinite -${ Helpers.randBetween(15, 30, true) }s`
-                }));
-            ui.dMapInner.append(layer);
+    private currMonth: number;
+
+    public summonStatistics(): void {
+        var timeElapsed = Math.floor((new Date().getTime() - this.clock.getTime()) / 60000);
+        var labels = [];
+        for (var i = 0; i < this.stateData._turnID; i++)
+            labels.push(i + 1);
+
+        // 数据统计表
+        ui.tabStat.html(`
+<table class="table table-striped">
+    <tr><th>建造次数</th><td>${this.stateData.stat.counts.builds}</td></tr>
+    <tr><th>毁灭次数</th><td>${this.stateData.stat.counts.destorys}</td></tr>
+    <tr><th>升级次数</th><td>${this.stateData.stat.counts.upgrades}</td></tr>
+    <tr><th>收获次数</th><td>${this.stateData.stat.counts.exploits}</td></tr>
+    <tr><th>实施次数</th><td>${this.stateData.stat.counts.applys}</td></tr>
+    <tr><th>游戏实际时间</th><td>${this.stateData.stat.gameRealTimeEslapsed} 分钟</td></tr>
+</table>`);
+
+        this.showDialog(ui.dlgStatistics);
+
+        // 数据统计画布
+        var ctx = _($("#canvasTrend")[0]).getContext("2d");
+        this.chartTrend = new Chart(ctx).Line({
+            labels: labels,
+            datasets: [
+                {
+                    label: "政府税收",
+                    data: Helpers.normalize(this.stateData.stat.accumlatedHistory.map((val) => val.fundIncome)),
+                    fillColor: "transparent",
+                    strokeColor: "#" + colors[1]
+                },
+                {
+                    label: "健康水平",
+                    data: Helpers.normalize(this.stateData.stat.accumlatedHistory.map((val) => val.avgHealth)),
+                    fillColor: "transparent",
+                    strokeColor: "#" + colors[2]
+                },
+                {
+                    label: "政府支出",
+                    data: Helpers.normalize(this.stateData.stat.accumlatedHistory.map((val) => val.actionFundConsume)),
+                    fillColor: "transparent",
+                    strokeColor: "#" + colors[3]
+                },
+                {
+                    label: "污染水平",
+                    data: Helpers.normalize(this.stateData.stat.accumlatedHistory.map((val) => val.pollution)),
+                    fillColor: "transparent",
+                    strokeColor: "#" + colors[4]
+                },
+                {
+                    label: "人口数量",
+                    data: Helpers.normalize(this.stateData.stat.accumlatedHistory.map((val) => val.population)),
+                    fillColor: "transparent",
+                    strokeColor: "#" + colors[5]
+                },
+            ]
+        });
+        ui.tabTrend.find("div").html(this.chartTrend.generateLegend());
+    }
+
+    public removeActionAt(pos: number): void {
+        var action = this.stateData.actions[pos];
+        this.logicModule.gameMap.setNoAction(action);
+        this.stateData.actions.splice(pos);
+        if (this.stateData.actions.length > 0)
+            ui.btnCommitedActions.find(".badge").show().text(this.stateData.actions.length);
+        else {
+            ui.btnCommitedActions.find(".badge").hide();
+            ui.lstTurnActions.hide();
         }
+        ui.lstTurnActions.find("li").each((i, e) => {
+            if (i == pos)
+                $(e).remove();
+            else
+                _(e).onclick = `frame.removeActionAt(${ i - 1 })`;
+        });
+    }
+
+    private sampleHex: GameMapHex[];
+
+    private updateVisual(): void {
+        this.setClouds(this.stateData._currentWindDirection);
+        ui.icoWindDirection.removeClass().addClass("wind glyphicon glyphicon-arrow-" + Arguments.directionEngName[this.stateData._currentWindDirection]);
+        ui.sWindDirection.text(Arguments.directionWindName[this.stateData._currentWindDirection]);
+
+        ui.sTurnID.text(`第 ${ this.stateData._turnID } 回合`);
+        var deltaDay = this.stateData._turnID;
+        ui.sDate.text(`${ (this.stateData._beginDay.month + Math.floor(deltaDay / 30)) % 12 + 1 }月 ${ (this.stateData._beginDay.day + deltaDay) % 30 + 1 }日`);
+        ui.sGovernmentFund.text(this.stateData._fund);
+
+        var healthSum = 0;
+        for (var i = 0; i < this.stateData.gameMap._mapHeight; i++)
+            for (var j = 0; j < this.stateData.gameMap._mapWidth; j++)
+                healthSum += this.stateData.gameMap.map[i][j]._hexResidentHealth;
+
+        ui.sResidentAverageHealth.text(
+            (Math.round(healthSum * 100 / this.stateData.gameMap._mapHeight / this.stateData.gameMap._mapWidth) / 100) +
+            " / " + Arguments.residentMaxHealth);
+        ui.btnCommitedActions.find(".badge").hide();
+    }
+
+    private clock: Date;
+
+    public initializeVisual(): void {
+        this.clock = new Date();
+        ui.dlgActionModal.fadeOut();
+        ui.dlgModal.fadeOut();
+        frame.mapViewAngle = 60;
+        this.updateVisual();
+    }
+
+    private setClouds(to: Direction): void {
+        ui.dMapInner.find("b.cloud-layer").remove();
+
+        if (to == Direction.Left || to == Direction.Right)
+            for (var i = Helpers.randBetween(3, 6, true); i >= 0; i--) {
+                var layer = $(`<b class="bkg3d-infinite cloud-layer" style="bottom: ${ Helpers.randBetween(0, 101, true) }%"></b>`);
+                for (var j = Helpers.randBetween(3, 6, true); j >= 0; j--)
+                    layer.append($('<img class="x-billboard-90" src="/Images/cloud.png" />').css({
+                        animation: to == Direction.Right ?
+                            `cloud-float ${ Helpers.randBetween(30, 60, true) }s linear infinite -${ Helpers.randBetween(15, 30, true) }s` :
+                            `cloud-float ${ Helpers.randBetween(30, 60, true) }s linear infinite -${ Helpers.randBetween(15, 30, true) }s reverse`
+                    }));
+                ui.dMapInner.append(layer);
+            }
+        else if (to == Direction.None)
+            return;
+        else
+            for (var i = Helpers.randBetween(3, 6, true); i >= 0; i--) {
+                var layer = $(`<b class="bkg3d-infinite cloud-layer"></b>`).css({
+                        animation: to == Direction.Up ?
+                            `cloud-layer-float ${ Helpers.randBetween(30, 60, true) }s linear infinite -${ Helpers.randBetween(15, 30, true) }s` :
+                            `cloud-layer-float ${ Helpers.randBetween(30, 60, true) }s linear infinite -${ Helpers.randBetween(15, 30, true) }s reverse`
+                    });
+                for (var j = Helpers.randBetween(3, 6, true); j >= 0; j--)
+                    layer.append(`<img class="x-billboard-90" src="/Images/cloud.png" style="left: ${ Helpers.randBetween(0, 101, true) }%" />`);
+                ui.dMapInner.append(layer);
+            }
     }
 
     public newGame(typeid: number): void {
         var types = [{ width: 7, height: 7 }, { width: 10, height: 10 }, { width: 15, height: 15 }];
         ui.dlgMapSizeSelect.fadeOut();
-        this.initializeVisual();
         this.initMap(types[typeid].height, types[typeid].width);
+        this.initializeVisual();
+        this.loading = false;
         this.changeUIScene(uiScenes.sGameMain)
             .call(() => this.inGame = true);
     }
@@ -298,6 +548,8 @@ class GameFrame {
     }
 
     public set loading(to: boolean) {
+        if (!to)
+            TweenMax.staggerFromTo(ui.panTurnControl.find("button.sub"), 0.8, { className: "-=shown" }, { className: "+=shown", ease: Back.easeOut }, 0.2);
         if (this._loading == to)
             return;
         this._loading = to;
@@ -319,7 +571,8 @@ class GameFrame {
                 , 0).add(TweenMax.staggerFromTo(ui.dLoading.find("header span"), 0.35, { y: -10 },
                 { y: 0, yoyo: true, repeat: -1 }, 0.1), 0);
         } else {
-            this.tlLoading.stop();
+            if (this.tlLoading)
+                this.tlLoading.stop();
             ui.dLoading.fadeOut();
         }
     }
@@ -331,13 +584,14 @@ class GameFrame {
             throw "这不可能！为什么有对话框开着还会调用我？";
         this.actionModalCallback = callback;
         ui.dlgActionModal.find("header").text(Arguments.gameMapHexMenuActionName[type]);
-        hex.inflateActionModal(ui.dlgActionModal.find(".hex-status"));
         ui.dlgActionModal.fadeIn();
         this.showDialog(ui.dlgActionModal.find(".dialog-body"));
     }
 
-    public onActionModalResult(result: Object): void {
+    public onActionModalResult(result: boolean): void {
         ui.dlgActionModal.fadeOut();
+        if (this.actionModalCallback && result !== false)
+            this.actionModalCallback($('#dlgActionModal li.active:visible').data('result'));
         this.actionModalCallback = null;
     }
 
@@ -497,10 +751,11 @@ function UISceneAnimationDefinitions() {
 var mapMovementController: MapMovementController;
 
 $(document).ready(function () {
-    frame = new GameFrame();
 
     for (var i in ui)
         ui[i] = $("#" + i);
+
+    frame = new GameFrame();
 
     mapMovementController = new MapMovementController();
     UISceneAnimationDefinitions();
@@ -546,8 +801,12 @@ $(document).ready(function () {
     });
 
     // 窗口关闭阻止
+    var closing = false;
     wnd.on('close', function () {
-        frame.showModal("退出", "你确定要退出游戏吗？未保存的进度将会丢失。",(r) => r && wnd.close(true));
+        if (closing)
+            wnd.close(true);
+        closing = true;
+        frame.showModal("退出", "你确定要退出游戏吗？未保存的进度将会丢失。",(r) => (closing = false, r) && wnd.close(true));
     });
     wnd.on('devtools-closed', function () {
         ui.panPlayControl.fadeOut();
@@ -569,6 +828,19 @@ $(document).ready(function () {
         mapMovementController.setDir(_(Direction)[this.dataset["dir"]], true);
     }, function () {
         mapMovementController.setDir(_(Direction)[this.dataset["dir"]], false);
+    });
+
+    // 历史动作面板
+    var lastAnim: TweenMax;
+    ui.btnCommitedActions.mouseenter(() => {
+        if (lastAnim)
+            lastAnim.kill();
+        lastAnim = TweenMax.fromTo(ui.lstTurnActions, 0.5, { opacity: 1, scale: 0, borderRadius: "500px" }, { scale: 1, borderRadius: "5px", ease: Back.easeOut });
+    });
+    ui.lstTurnActions.mouseleave(() => {
+        if (lastAnim)
+            lastAnim.kill();
+        lastAnim = TweenMax.fromTo(ui.lstTurnActions, 0.1, { scale: 1, borderRadius: "5px" }, { opacity: 1, scale: 0, borderRadius: "500px" });
     });
 
     // 入场动画
