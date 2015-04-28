@@ -33,7 +33,7 @@ class UIScene {
             return this.fnExit(this.ele, argu).add(targetScene.fnEnter(targetScene.ele, argu), 0)
                 .call(() => ui.dAnimMask.hide());
         return this.fnExit(this.ele, argu).add(targetScene.fnEnter(targetScene.ele, argu))
-            .call(() => ui.dAnimMask.hide())
+            .call(() => ui.dAnimMask.hide());
     }
 }
 
@@ -197,6 +197,8 @@ class GameFrame {
         ui.btnCommitedActions.find(".badge").hide();
         ui.lstTurnActions.html("").hide();
         GameMapHex.selectedHex && (GameMapHex.selectedHex.selected = false);
+        if (this.stateData._fund > 100000 && parseFloat(ui.sResidentAverageHealth.text()) >= 8)
+            this.showModal("游戏结束", "您已经达到了游戏目标！恭喜您做到了环境与发展的均衡！请问您是否要继续？",(r) => r && wnd.reload());
         setTimeout(() => this.loading = false, Helpers.randBetween(1000, 2000, true));
     }
 
@@ -384,7 +386,22 @@ class GameFrame {
         ui.sResidentAverageHealth.text(
             (Math.round(healthSum * 100 / this.stateData.gameMap._mapHeight / this.stateData.gameMap._mapWidth) / 100) +
             " / " + Arguments.residentMaxHealth);
-        ui.btnCommitedActions.find(".badge").hide();
+
+        ui.lstTurnActions.html("");
+        if (this.stateData.actions.length > 0) {
+            ui.lstTurnActions.show();
+            ui.btnCommitedActions.find(".badge").show().text(this.stateData.actions.length);
+            // 往动作列表里加
+            for (var i = 0; i < this.stateData.actions.length; i++) {
+                var action = this.stateData.actions[i];
+                ui.lstTurnActions.append(`<li>
+                <span class="desc">${ action._name }</span>
+                <span class="glyphicon glyphicon-piggy-bank"> ${ action._cashDiff }</span>
+                <span class="action"><button class="classic" onclick="frame.removeActionAt(${ this.stateData.actions.length - 1 })">取消</button></span></li>`);
+            }
+        } else {
+            ui.btnCommitedActions.find(".badge").hide();
+        }
     }
 
     private clock: Date;
@@ -426,14 +443,23 @@ class GameFrame {
             }
     }
 
+    private mapTypeID: number;
+
     public newGame(typeid: number): void {
         var types = [{ width: 7, height: 7 }, { width: 10, height: 10 }, { width: 15, height: 15 }];
         ui.dlgMapSizeSelect.fadeOut();
         this.initMap(types[typeid].height, types[typeid].width);
         this.initializeVisual();
         this.loading = false;
+        this.changeUIScene(uiScenes.sGameStory);
+        this.mapTypeID = typeid;
+    }
+
+    public skipIntro(): void {
         this.changeUIScene(uiScenes.sGameMain)
             .call(() => this.inGame = true);
+        if (this.mapTypeID == 2)
+            this.changeSpeed(5);
     }
 
     public mainMenuCall(type: string): void {
@@ -662,7 +688,8 @@ var uiScenes = {
     sIntro: <UIScene> null,
     sGameMenu: <UIScene> null,
     sCredits: <UIScene> null,
-    sGameMain: <UIScene> null
+    sGameMain: <UIScene> null,
+    sGameStory: <UIScene> null
 };
 
 /*
@@ -728,10 +755,10 @@ function UISceneAnimationDefinitions() {
             tl.fromTo(main, 0.5, { opacity: 0 }, { opacity: 1 })
                 .fromTo(ui.dStatusInfo, 0.5, { width: 0 }, { width: "25vw", ease: Circ.easeIn }, 0);
             if (!argu || !argu.skipIntro)
-                tl.fromTo(ui.dMapOuter, 5, { rotationX: 0, z: 0 }, { rotationX: 60, z: -100 }, 0.5)
+                tl.fromTo(ui.dMapOuter, 2, { rotationX: 0, z: 0 }, { rotationX: 60, z: -100 }, 0.5)
                     .fromTo($(".x-billboard-90"), 5, { rotationX: 90 }, { rotationX: 30 }, 0.5)
                     .staggerFromTo(ui.dMapInner.find("figure"), 0.5, { rotationX: 90, rotationY: 75, z: 50, opacity: 0 },
-                    { rotationX: 0, rotationY: 0, z: 0, opacity: 1 }, 0.1, 0.5);
+                    { rotationX: 0, rotationY: 0, z: 0, opacity: 1 }, 0.01, 0.5);
             else
                 tl.fromTo(ui.dMapOuter, 1, { rotationX: 0, z: 0 }, { rotationX: 60, z: -100 }, 0.5)
                     .fromTo($(".x-billboard-90"), 1, { rotationX: 90 }, { rotationX: 30 }, 0.5);
@@ -744,6 +771,22 @@ function UISceneAnimationDefinitions() {
             tl.fromTo(ui.dStatusInfo, 0.5, { width: 0 }, { width: "25vw", ease: Circ.easeIn })
                 .fromTo(main, 0.5, { opacity: 1 }, { opacity: 0 }, 0)
                 .call(() => main.hide());
+            return tl;
+        }, false);
+    uiScenes.sGameStory = new UIScene(ui.dGameStory,
+        (story, argu) => {
+            var tl = new TimelineMax();
+            story.show().find("p").css("opacity", 0);
+            tl.fromTo(story, 1, { rotation: -720, scale: 0 }, { rotation: 0, scale: 1 });
+            story.find("p").each((i, e) =>
+                tl.fromTo(e, 4, { scale: 3, opacity: 0, y: "-50%" }, { scale: 1, opacity: 1, ease: Expo.easeOut }, 6 * i + 1)
+                    .to(e, 2, { scale: 0, opacity: 0, ease: Expo.easeIn }, 6 * i + 5));
+            return tl;
+        },
+        (story, argu) => {
+            var tl = new TimelineMax();
+            tl.fromTo(story, 1, { opacity: 1, scale: 1 }, { opacity: 0, scale: 3 })
+                .call(() => story.hide());
             return tl;
         }, false);
 }

@@ -97,7 +97,8 @@ var ui = {
     dlgStatistics: <JQuery> null,
     lstPolicy: <JQuery> null,
     tabStat: <JQuery> null,
-    tabTrend: <JQuery> null
+    tabTrend: <JQuery> null,
+    dGameStory: <JQuery> null
 };
 
 var colors = ["FFFFFF",

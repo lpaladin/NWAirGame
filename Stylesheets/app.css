@@ -1048,3 +1048,29 @@ figure.turnctrl > button.sub {
     display: inline-block;
     margin: 0 0.5em;
 }
+
+#dGameStory {
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+    #dGameStory p {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        text-align: center;
+        -moz-transform: translateY(-50%);
+        -ms-transform: translateY(-50%);
+        -o-transform: translateY(-50%);
+        -webkit-transform: translateY(-50%);
+        transform: translateY(-50%);
+        -webkit-text-stroke: black;
+        text-shadow: 0 0 1px white;
+        font-weight: bold;
+        font-size: 2em;
+    }
+
+#dGameStory button {
+    z-index: 9;
+    position: relative;
+}
