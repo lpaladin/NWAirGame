@@ -263,7 +263,7 @@ class GameFrame {
                 ui.lstPolicy.show().html("");
                 for (var i = 0; i < this.stateData.lstAvailablePolicies.length; i++)
                     ui.lstPolicy.append($("<li></li>").data("result", i)
-                        .append(`<p><span class="glyphicon ${ Arguments.policies[i]._glyphicon }"></span> ${ this.stateData.lstAvailablePolicies[i]._name }</p>`)
+                        .append(`<p><span class="glyphicon ${ this.stateData.lstAvailablePolicies[i]._glyphicon }"></span> ${ this.stateData.lstAvailablePolicies[i]._name }</p>`)
                         .append(`<p><span class="glyphicon glyphicon-piggy-bank"></span> 耗费 ${ -this.stateData.lstAvailablePolicies[i]._cost }</p>`));
                 cb = (result) => {
                     currentHex.beginRecordAction();
