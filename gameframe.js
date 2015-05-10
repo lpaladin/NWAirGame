@@ -227,8 +227,10 @@ var GameFrame = (function () {
                     currentHex.beginRecordAction();
                     if (currentHex.facilityType == FacilityType.EnvironmentalResearch)
                         _this.saveAction(currentHex.endRecordAndGenerateAction("研发" + Arguments.policies[result]._name, Arguments.policies[result]._cost / 10, Arguments.policies[result], GameMapHexMenuActions.Exploit));
-                    else
-                        _this.saveAction(currentHex.endRecordAndGenerateAction("进行" + Arguments.policies[result]._name, Arguments.policies[result]._cost, Arguments.policies[result], GameMapHexMenuActions.Exploit));
+                    else {
+                        currentHex.applyPolicy = Arguments.policies[result];
+                        _this.saveAction(currentHex.endRecordAndGenerateAction("进行" + Arguments.policies[result]._name, Arguments.policies[result]._cost, null, GameMapHexMenuActions.Exploit));
+                    }
                 };
                 break;
             case GameMapHexMenuActions.ApplyPolicy:
@@ -397,13 +399,14 @@ var GameFrame = (function () {
                 break;
             case "loadGame":
                 // 遍历存档文件夹
-                var paths = fs.readdirSync("./UserData/");
-                ui.lstLoadProgress.html("");
+                var paths = fs.readdirSync("./UserData/"), slots = [];
+                ui.lstSaveProgress.html("");
                 for (var i = 0; i < paths.length; i++) {
                     var name = paths[i].match(/save([0-9]*)\.sav$/);
                     if (name)
-                        ui.lstLoadProgress.append($("\n<li>\n    <img src=\"UserData/save" + name[1] + ".png?" + Math.random() + "\" />\n    <div>\n        <p class=\"title\">存档" + name[1] + "</p>\n        <p>" + Helpers.dateToString(fs.statSync("./UserData/" + paths[i]).mtime) + "</p>\n    </div>\n</li>").data("id", name[1]));
+                        slots[parseInt(name[1])] = $("\n<li>\n    <img src=\"UserData/save" + name[1] + ".png?" + Math.random() + "\" />\n    <div>\n        <p class=\"title\">存档" + name[1] + "</p>\n        <p>" + Helpers.dateToString(fs.statSync("./UserData/" + paths[i]).mtime) + "</p>\n    </div>\n</li>").data("id", name[1]);
                 }
+                ui.lstLoadProgress.append(slots);
                 this.showDialog(ui.dlgLoadProgress);
                 break;
             case "about":
@@ -414,14 +417,15 @@ var GameFrame = (function () {
                 break;
             case "saveGame":
                 // 遍历存档文件夹
-                var paths = fs.readdirSync("./UserData/"), lastNum;
+                var paths = fs.readdirSync("./UserData/"), slots = [];
                 ui.lstSaveProgress.html("");
                 for (var i = 0; i < paths.length; i++) {
                     var name = paths[i].match(/save([0-9]*)\.sav$/);
                     if (name)
-                        ui.lstSaveProgress.append($("\n<li>\n    <img src=\"UserData/save" + name[1] + ".png?" + Math.random() + "\" />\n    <div>\n        <p class=\"title\">存档" + name[1] + "</p>\n        <p>" + Helpers.dateToString(fs.statSync("./UserData/" + paths[i]).mtime) + "</p>\n    </div>\n</li>").data("id", lastNum = name[1]));
+                        slots[parseInt(name[1])] = $("\n<li>\n    <img src=\"UserData/save" + name[1] + ".png?" + Math.random() + "\" />\n    <div>\n        <p class=\"title\">存档" + name[1] + "</p>\n        <p>" + Helpers.dateToString(fs.statSync("./UserData/" + paths[i]).mtime) + "</p>\n    </div>\n</li>").data("id", name[1]);
                 }
-                ui.lstSaveProgress.append($("\n<li>\n    <img src=\"/Images/bkg.jpg\" />\n    <div>\n        <p class=\"title\">新存档</p>\n    </div>\n</li>").data("id", parseInt(lastNum) + 1));
+                ui.lstSaveProgress.append(slots);
+                ui.lstSaveProgress.append($("\n<li>\n    <img src=\"/Images/bkg.jpg\" />\n    <div>\n        <p class=\"title\">新存档</p>\n    </div>\n</li>").data("id", slots.length + 1));
                 this.showDialog(ui.dlgSaveProgress);
                 break;
             case "exit":
@@ -631,7 +635,7 @@ function UISceneAnimationDefinitions() {
     uiScenes.sGameStory = new UIScene(ui.dGameStory, function (story, argu) {
         var tl = new TimelineMax();
         story.show().find("p").css("opacity", 0);
-        tl.fromTo(story, 1, { rotation: -720, scale: 0 }, { rotation: 0, scale: 1 });
+        tl.fromTo(story, 1, { opacity: 1, rotation: -720, scale: 0 }, { rotation: 0, scale: 1 });
         story.find("p").each(function (i, e) { return tl.fromTo(e, 4, { scale: 3, opacity: 0, y: "-50%" }, { scale: 1, opacity: 1, ease: Expo.easeOut }, 6 * i + 1).to(e, 2, { scale: 0, opacity: 0, ease: Expo.easeIn }, 6 * i + 5); });
         return tl;
     }, function (story, argu) {

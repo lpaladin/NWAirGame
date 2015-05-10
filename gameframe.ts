@@ -254,8 +254,10 @@ class GameFrame {
                     currentHex.beginRecordAction();
                     if (currentHex.facilityType == FacilityType.EnvironmentalResearch)
                         this.saveAction(currentHex.endRecordAndGenerateAction("研发" + Arguments.policies[result]._name, Arguments.policies[result]._cost / 10, Arguments.policies[result], GameMapHexMenuActions.Exploit));
-                    else
-                        this.saveAction(currentHex.endRecordAndGenerateAction("进行" + Arguments.policies[result]._name, Arguments.policies[result]._cost, Arguments.policies[result], GameMapHexMenuActions.Exploit));
+                    else {
+                        currentHex.applyPolicy = Arguments.policies[result];
+                        this.saveAction(currentHex.endRecordAndGenerateAction("进行" + Arguments.policies[result]._name, Arguments.policies[result]._cost, null, GameMapHexMenuActions.Exploit));
+                    }
                 };
                 break;
             case GameMapHexMenuActions.ApplyPolicy:
@@ -472,21 +474,22 @@ class GameFrame {
                 break;
             case "loadGame":
                 // 遍历存档文件夹
-                var paths = fs.readdirSync("./UserData/");
-                ui.lstLoadProgress.html("");
+                var paths = fs.readdirSync("./UserData/"), slots = [];
+                ui.lstSaveProgress.html("");
                 for (var i = 0; i < paths.length; i++) {
                     var name = paths[i].match(/save([0-9]*)\.sav$/);
                     if (name)
-                        ui.lstLoadProgress.append($(`
+                        slots[parseInt(name[1])] = $(`
 <li>
     <img src="UserData/save${ name[1] }.png?${ Math.random() }" />
     <div>
-        <p class="title">存档${ name[1] }</p>
+        <p class="title">存档${ name[1]}</p>
         <p>${ Helpers.dateToString(fs.statSync("./UserData/" + paths[i]).mtime) }</p>
     </div>
 </li>`
-                                ).data("id", name[1]));
+                            ).data("id", name[1]);
                 }
+                ui.lstLoadProgress.append(slots);
                 this.showDialog(ui.dlgLoadProgress);
                 break;
             case "about":
@@ -497,12 +500,12 @@ class GameFrame {
                 break;
             case "saveGame":
                 // 遍历存档文件夹
-                var paths = fs.readdirSync("./UserData/"), lastNum: string;
+                var paths = fs.readdirSync("./UserData/"), slots = [];
                 ui.lstSaveProgress.html("");
                 for (var i = 0; i < paths.length; i++) {
                     var name = paths[i].match(/save([0-9]*)\.sav$/);
                     if (name)
-                        ui.lstSaveProgress.append($(`
+                        slots[parseInt(name[1])] = $(`
 <li>
     <img src="UserData/save${ name[1] }.png?${ Math.random() }" />
     <div>
@@ -510,8 +513,9 @@ class GameFrame {
         <p>${ Helpers.dateToString(fs.statSync("./UserData/" + paths[i]).mtime) }</p>
     </div>
 </li>`
-                            ).data("id", lastNum = name[1]));
+                            ).data("id", name[1]);
                 }
+                ui.lstSaveProgress.append(slots);
                 ui.lstSaveProgress.append($(`
 <li>
     <img src="/Images/bkg.jpg" />
@@ -519,7 +523,7 @@ class GameFrame {
         <p class="title">新存档</p>
     </div>
 </li>`
-                    ).data("id", parseInt(lastNum) + 1));
+                    ).data("id", slots.length + 1));
                 this.showDialog(ui.dlgSaveProgress);
                 break;
             case "exit":
@@ -777,7 +781,7 @@ function UISceneAnimationDefinitions() {
         (story, argu) => {
             var tl = new TimelineMax();
             story.show().find("p").css("opacity", 0);
-            tl.fromTo(story, 1, { rotation: -720, scale: 0 }, { rotation: 0, scale: 1 });
+            tl.fromTo(story, 1, { opacity: 1, rotation: -720, scale: 0 }, { rotation: 0, scale: 1 });
             story.find("p").each((i, e) =>
                 tl.fromTo(e, 4, { scale: 3, opacity: 0, y: "-50%" }, { scale: 1, opacity: 1, ease: Expo.easeOut }, 6 * i + 1)
                     .to(e, 2, { scale: 0, opacity: 0, ease: Expo.easeIn }, 6 * i + 5));
