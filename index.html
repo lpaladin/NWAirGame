@@ -105,6 +105,9 @@
                     <p class="indianred">
                         <label><span class="glyphicon glyphicon-heart"></span> 居民平均健康水平</label><span id="sResidentAverageHealth">10 / 10</span>
                     </p>
+                    <p class="indigo">
+                        <label><span class="glyphicon glyphicon-star"></span> 评价分数</label><span id="sRate">-</span>
+                    </p>
                 </div>
             </div>
         </section>
@@ -188,7 +191,7 @@
                 </p>
                 <hr />
                 <h3>采用技术、语言和开发环境</h3>
-                <p><a href="https://github.com/nwjs/nw.js">node-webkit</a>：Node.js 和 Webkit 内核的结合</p>
+                <p><a href="https://github.com/nwjs/nw.js">nw.js（原node-webkit）</a>：Node.js 和 Webkit 内核的结合</p>
                 <p><a href="http://www.typescriptlang.org/">Typescript</a>：类型化的 Javascript</p>
                 <p><a href="http://greensock.com/">GreenSocks</a>：GPU 加速的 CSS 动画库</p>
                 <p>Javascript、CSS、HTML</p>
@@ -234,5 +237,41 @@
             <ul id="lstMessages"></ul>
         </figure>
     </div>
+    <audio id="sndStrongEntry">
+        <source src="/Sound/StrongEntry.wav" type="audio/wav" />
+    </audio>
+    <audio id="bgmInGame1" onended="frame.switchBGM('bgmInGame2', true)">
+        <source src="/Sound/BGM1.wav" type="audio/wav" />
+    </audio>
+    <audio id="bgmInGame2" onended="frame.switchBGM('bgmInGame1', true)">
+        <source src="/Sound/BGM2.ogg" type="audio/ogg" />
+    </audio>
+    <audio id="sndClick">
+        <source src="/Sound/Click.wav" type="audio/wav" />
+    </audio>
+    <audio id="sndLongClick">
+        <source src="/Sound/LongClick.wav" type="audio/wav" />
+    </audio>
+    <audio id="sndLowClick">
+        <source src="/Sound/LowClick.wav" type="audio/wav" />
+    </audio>
+    <audio id="sndPop">
+        <source src="/Sound/Pop.wav" type="audio/wav" />
+    </audio>
+    <audio id="sndSelect">
+        <source src="/Sound/Select.wav" type="audio/wav" />
+    </audio>
+    <audio id="sndShortCrisp">
+        <source src="/Sound/ShortCrisp.wav" type="audio/wav" />
+    </audio>
+    <audio id="sndLight">
+        <source src="/Sound/Light.wav" type="audio/wav" />
+    </audio>
+    <audio id="bgmMenu2" onended="frame.switchBGM('bgmMenu1', true)">
+        <source src="/Sound/MenuBGM1.wav" type="audio/wav" />
+    </audio>
+    <audio id="bgmMenu1" autoplay onended="frame.switchBGM('bgmMenu2', true)">
+        <source src="/Sound/MenuBGM2.wav" type="audio/wav" />
+    </audio>
 </body>
 </html>

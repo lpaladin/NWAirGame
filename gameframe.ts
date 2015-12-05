@@ -62,6 +62,8 @@ class GameFrame {
             throw "游戏框架被再次初始化！";
         GameFrame._init = true;
 
+        this.playingBGM = <HTMLAudioElement> document.getElementById('bgmMenu1');
+
         mnuHex.append(new gui.MenuItem({
             label: "　" + Arguments.gameMapHexMenuActionName[GameMapHexMenuActions.Build], icon: "/Images/Icon/112_Plus_Green_16x16_72.png",
             click: () => this.hexMenuCall(GameMapHexMenuActions.Build)
@@ -106,12 +108,14 @@ class GameFrame {
                 _hexResidentHealth: Arguments.residentMaxHealth,
                 _hexLastPollution: 0,
                 _hexPopulation: 0,
+                _hexRank: 0,
                 _hexHasAction: false
             }, $ele, $(), true);
         }
     }
     
     public loadProgress(id: string): boolean {
+        this.playSound('sndLongClick');
         this.pushMessage(MessageType.Information, "读取中，请稍候……");
         this.stateData = JSON.parse(fs.readFileSync("./UserData/save" + id + ".sav", "utf8"));
         this.logicModule = new WorldDevelopmentModel(this.stateData);
@@ -146,8 +150,10 @@ class GameFrame {
     public saveProgress(id: string, callback?: Function): void {
         if (fs.existsSync("./UserData/save" + id + ".sav"))
             this.showModal("警告", "将会覆盖存档，你要继续吗？",(result) => {
-                if (result)
+                if (result) {
+                    this.playSound('sndLongClick');
                     this._realSave(id, callback);
+                }
             });
         else
             this._realSave(id, callback);
@@ -190,6 +196,7 @@ class GameFrame {
             this.pushMessage(MessageType.Warning, "政府资金不足！");
             return;
         }
+        this.playSound('sndStrongEntry');
         this.loading = true;
         this.logicModule.nextTurn();
         this.updateVisual();
@@ -198,11 +205,12 @@ class GameFrame {
         ui.lstTurnActions.html("").hide();
         GameMapHex.selectedHex && (GameMapHex.selectedHex.selected = false);
         if (this.stateData._fund > 100000 && parseFloat(ui.sResidentAverageHealth.text()) >= 8)
-            this.showModal("游戏结束", "您已经达到了游戏目标！恭喜您做到了环境与发展的均衡！请问您是否要继续？",(r) => r && wnd.reload());
+            this.showModal("游戏结束", "您已经达到了游戏目标！恭喜您做到了环境与发展的均衡！请问您是否要继续？",(r) => !r && wnd.reload());
         setTimeout(() => this.loading = false, Helpers.randBetween(1000, 2000, true));
     }
 
     public hexMenuCall(type: GameMapHexMenuActions): void {
+        this.playSound('sndShortCrisp');
         var currentHex = GameMapHex.selectedHex, cb;
         currentHex.inflateActionModal(ui.dlgActionModal.find(".hex-status"));
         switch (type) {
@@ -380,10 +388,14 @@ class GameFrame {
         ui.sDate.text(`${ (this.stateData._beginDay.month + Math.floor(deltaDay / 30)) % 12 + 1 }月 ${ (this.stateData._beginDay.day + deltaDay) % 30 + 1 }日`);
         ui.sGovernmentFund.text(this.stateData._fund);
 
-        var healthSum = 0;
+        var rankSum = 0, healthSum = 0;
         for (var i = 0; i < this.stateData.gameMap._mapHeight; i++)
-            for (var j = 0; j < this.stateData.gameMap._mapWidth; j++)
+            for (var j = 0; j < this.stateData.gameMap._mapWidth; j++) {
+                rankSum += this.stateData.gameMap.map[i][j]._hexRank;
                 healthSum += this.stateData.gameMap.map[i][j]._hexResidentHealth;
+            }
+
+        ui.sRate.text(Math.floor(rankSum * 1000));
 
         ui.sResidentAverageHealth.text(
             (Math.round(healthSum * 100 / this.stateData.gameMap._mapHeight / this.stateData.gameMap._mapWidth) / 100) +
@@ -448,6 +460,7 @@ class GameFrame {
     private mapTypeID: number;
 
     public newGame(typeid: number): void {
+        this.playSound('sndLongClick');
         var types = [{ width: 7, height: 7 }, { width: 10, height: 10 }, { width: 15, height: 15 }];
         ui.dlgMapSizeSelect.fadeOut();
         this.initMap(types[typeid].height, types[typeid].width);
@@ -475,7 +488,7 @@ class GameFrame {
             case "loadGame":
                 // 遍历存档文件夹
                 var paths = fs.readdirSync("./UserData/"), slots = [];
-                ui.lstSaveProgress.html("");
+                ui.lstLoadProgress.html("");
                 for (var i = 0; i < paths.length; i++) {
                     var name = paths[i].match(/save([0-9]*)\.sav$/);
                     if (name)
@@ -560,6 +573,7 @@ class GameFrame {
     }
 
     private showDialog(ele: JQuery): void {
+        this.playSound('sndPop');
         TweenMax.fromTo(_$(ele.show()).center(), 0.5, {
             transformPerspective: 600,
             rotationX: 90,
@@ -683,6 +697,22 @@ class GameFrame {
         }
         this._pausing = to;
     }
+
+    private playingBGM: HTMLAudioElement;
+
+    public switchBGM(to: string, reset: boolean): void {
+        this.playingBGM.pause();
+        if (reset)
+            this.playingBGM.currentTime = 0;
+        this.playingBGM = <HTMLAudioElement> document.getElementById(to);
+        this.playingBGM.play();
+    }
+
+    public playSound(id: string): void {
+        var audio = <HTMLAudioElement> document.getElementById(id);
+        audio.currentTime = 0;
+        audio.play();
+    }
 }
 
 //#endregion
@@ -753,6 +783,7 @@ function UISceneAnimationDefinitions() {
     uiScenes.sGameMain = new UIScene(ui.dGameMain,
         (main, argu) => {
             var tl = new TimelineMax();
+            frame.switchBGM('bgmInGame1', false);
             if (argu && argu.isPause == true)
                 return tl;
             main.show();
@@ -770,6 +801,7 @@ function UISceneAnimationDefinitions() {
         },
         (main, argu) => {
             var tl = new TimelineMax();
+            frame.switchBGM('bgmMenu1', false);
             if (argu && argu.isPause == true)
                 return tl;
             tl.fromTo(ui.dStatusInfo, 0.5, { width: 0 }, { width: "25vw", ease: Circ.easeIn })
@@ -845,7 +877,13 @@ $(document).ready(function () {
     }).on("click", "ul.single-select li", function () { // 单选列表
         var $this = $(this);
         $this.addClass("active").siblings(".active").removeClass("active");
-    });
+    }).on('mouseover', '.hl-style-menu > li, button.classic',
+        () => frame.playSound('sndClick')
+        ).on('mousedown', 'button.classic',
+        () => frame.playSound('sndSelect')
+        ).on('click', '.hexagon',
+        () => frame.playSound('sndLight')
+    );
 
     // 窗口关闭阻止
     var closing = false;
@@ -874,8 +912,8 @@ $(document).ready(function () {
     }).find("figure.dirctrl").hover(function () {
         mapMovementController.setDir(_(Direction)[this.dataset["dir"]], true);
     }, function () {
-        mapMovementController.setDir(_(Direction)[this.dataset["dir"]], false);
-    });
+            mapMovementController.setDir(_(Direction)[this.dataset["dir"]], false);
+        });
 
     // 历史动作面板
     var lastAnim: TweenMax;
@@ -945,4 +983,4 @@ $(document).ready(function () {
             mapMovementController.setDir(Direction.Right, false);
             break;
     }
-}).bind("contextmenu", function () { return false; })
+}).bind("contextmenu", function () { return false; });

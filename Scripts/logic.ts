@@ -118,6 +118,7 @@ interface IGameMapHex extends ISaveData {
     _hexPopulation: number; // 人口
     _hexHasAction: boolean;
     _hexLastPollution: number;
+    _hexRank: number; // 评分
 }
 
 enum FacilityType {
@@ -376,7 +377,7 @@ class GameMapHex implements IWithSaveData {
 <table>
     <tr><th>人口</th><td>${ this.data._hexPopulation }</td></tr>
     <tr><th>设施</th><td>${ this.facilityName }</td></tr>
-    <tr><th>健康水平</th><td>${ this.data._hexResidentHealth } / ${ Arguments.residentMaxHealth }</td></tr>
+    <tr><th>健康水平</th><td>${ Math.floor(this.data._hexResidentHealth * 100) / 100 } / ${ Arguments.residentMaxHealth }</td></tr>
 </table>`
                 )
                 .show(),
@@ -405,7 +406,8 @@ class GameMapHex implements IWithSaveData {
     }
 
     private get polluteLevel(): number {
-        return Arguments.facility2envFriendlyLevelReversed[this.facilityType] * (this.facilityLevel + 1) * (1 - this.data._hexPollutionControl) / 18;
+        return (Arguments.facility2envFriendlyLevelReversed[this.facilityType] * (this.facilityLevel + 1) * (1 - this.data._hexPollutionControl) / 18) * 0.3 +
+            this.data._hexLastPollution * 0.7;
     }
 
     public moveToNextTurn(hexWindSource: GameMapHex): number {
@@ -413,13 +415,26 @@ class GameMapHex implements IWithSaveData {
             this.data._hexResidentHealth = 0;
             return 0;
         }
-        var rawLv = this.polluteLevel + (hexWindSource ? hexWindSource.data._hexLastPollution : 0) / 2, staminaRatio = this.data._hexPopulation / Arguments.populationBase;
+        var rawLv = this.polluteLevel + (hexWindSource ? hexWindSource.data._hexLastPollution : 0) / 2, staminaRatio = 1; // this.data._hexPopulation / Arguments.populationBase;
         this.cloudCount = Math.floor(rawLv * 3);
         this.data._hexResidentAwareness = 1 - (1 - this.data._hexResidentAwareness) * rawLv / staminaRatio;
-        this.data._hexEconomy = this.data._hexEconomy * this.data._hexResidentAwareness * staminaRatio * (this.facilityType == FacilityType.GeneralFactory ? 1 : 0.1) + this.facilityLevel / 6;
-        this.data._hexPopulation = Math.floor(this.data._hexPopulation * (1.1 - Math.sqrt(rawLv)));
+
+        if (this.facilityType == FacilityType.GeneralFactory)
+            this.data._hexEconomy = 25 * (1 - this.data._hexResidentAwareness / 5) * (this.facilityLevel / 6) * this.data._hexPopulation / Arguments.populationBase;
+        else if (this.facilityType == FacilityType.ResidentialArea)
+            this.data._hexEconomy = 0.5 * (1 - this.data._hexResidentAwareness / 5) * (this.facilityLevel / 6) * this.data._hexPopulation / Arguments.populationBase;
+        else
+            this.data._hexEconomy = -0.5 * (1 - this.data._hexResidentAwareness / 5) * (this.facilityLevel / 6) * this.data._hexPopulation / Arguments.populationBase;
+
+        if (this.facilityType == FacilityType.ResidentialArea || this.facilityType == FacilityType.GeneralFactory)
+            this.data._hexPopulation = Math.floor(this.data._hexPopulation * (1.1 - Math.sqrt(rawLv / 1.5) / 10));
+        else
+            this.data._hexPopulation = Math.floor(this.data._hexPopulation * (1.001 - Math.sqrt(rawLv / 1.5) / 1000));
         this.data._hexPollutionControl *= this.data._hexResidentAwareness;
-        this.data._hexResidentHealth -= Math.round(rawLv * Math.sqrt(staminaRatio) * 10) * 0.01;
+        this.data._hexResidentHealth -= Math.round(rawLv * Math.sqrt(staminaRatio) * 10) * 0.05;
+        this.data._hexRank = 0.06 * this.data._hexEconomy / this.data._hexPopulation + // 人均GDP
+            0.045 * ((this.data._hexFacilityType == FacilityType.GeneralFactory || this.data._hexFacilityType == FacilityType.ResidentialArea) ? this.data._hexFacilityLevel : 0) + // 人均住房面积
+            0.05 * (this.data._hexFacilityType == FacilityType.Forest ? this.data._hexFacilityLevel / 6 : 0); // 森林覆盖率
         this.data._hexHasAction = false;
         this.elementRef.removeClass("has-action");
         return this.data._hexEconomy;
@@ -716,6 +731,7 @@ class WorldDevelopmentModel implements IWithSaveData {
                     _hexPollutionControl: Arguments.hexInitialPollutionControl,
                     _hexPopulation: (template[row][col] + 1) * Arguments.populationBase + Helpers.randBetween(-Arguments.populationBase, Arguments.populationBase, true),
                     _hexLastPollution: 0,
+                    _hexRank: 0,
                     _hexHasAction: false
                 };
             }

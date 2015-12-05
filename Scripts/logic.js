@@ -133,7 +133,7 @@ var GameMapHex = (function () {
             else
                 css.top = e.clientY + 25;
             TweenMax.to(elementRef.removeClass("blur"), 0.2, { className: "+=glow", z: 10 });
-            TweenMax.fromTo(popup.css(css).html("\n<table>\n    <tr><th>人口</th><td>" + _this.data._hexPopulation + "</td></tr>\n    <tr><th>设施</th><td>" + _this.facilityName + "</td></tr>\n    <tr><th>健康水平</th><td>" + _this.data._hexResidentHealth + " / " + Arguments.residentMaxHealth + "</td></tr>\n</table>").show(), 0.2, { scale: 0, opacity: 1 }, { scale: 1, ease: Back.easeOut });
+            TweenMax.fromTo(popup.css(css).html("\n<table>\n    <tr><th>人口</th><td>" + _this.data._hexPopulation + "</td></tr>\n    <tr><th>设施</th><td>" + _this.facilityName + "</td></tr>\n    <tr><th>健康水平</th><td>" + Math.floor(_this.data._hexResidentHealth * 100) / 100 + " / " + Arguments.residentMaxHealth + "</td></tr>\n</table>").show(), 0.2, { scale: 0, opacity: 1 }, { scale: 1, ease: Back.easeOut });
             TweenMax.fromTo(_this.healthGauge.show(), 0.2, { scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 1, ease: Back.easeOut });
         };
         this.fnMouseLeave = function () {
@@ -370,7 +370,7 @@ var GameMapHex = (function () {
     };
     Object.defineProperty(GameMapHex.prototype, "polluteLevel", {
         get: function () {
-            return Arguments.facility2envFriendlyLevelReversed[this.facilityType] * (this.facilityLevel + 1) * (1 - this.data._hexPollutionControl) / 18;
+            return (Arguments.facility2envFriendlyLevelReversed[this.facilityType] * (this.facilityLevel + 1) * (1 - this.data._hexPollutionControl) / 18) * 0.3 + this.data._hexLastPollution * 0.7;
         },
         enumerable: true,
         configurable: true
@@ -380,13 +380,22 @@ var GameMapHex = (function () {
             this.data._hexResidentHealth = 0;
             return 0;
         }
-        var rawLv = this.polluteLevel + (hexWindSource ? hexWindSource.data._hexLastPollution : 0) / 2, staminaRatio = this.data._hexPopulation / Arguments.populationBase;
+        var rawLv = this.polluteLevel + (hexWindSource ? hexWindSource.data._hexLastPollution : 0) / 2, staminaRatio = 1; // this.data._hexPopulation / Arguments.populationBase;
         this.cloudCount = Math.floor(rawLv * 3);
         this.data._hexResidentAwareness = 1 - (1 - this.data._hexResidentAwareness) * rawLv / staminaRatio;
-        this.data._hexEconomy = this.data._hexEconomy * this.data._hexResidentAwareness * staminaRatio * (this.facilityType == 4 /* GeneralFactory */ ? 1 : 0.1) + this.facilityLevel / 6;
-        this.data._hexPopulation = Math.floor(this.data._hexPopulation * (1.1 - Math.sqrt(rawLv)));
+        if (this.facilityType == 4 /* GeneralFactory */)
+            this.data._hexEconomy = 25 * (1 - this.data._hexResidentAwareness / 5) * (this.facilityLevel / 6) * this.data._hexPopulation / Arguments.populationBase;
+        else if (this.facilityType == 2 /* ResidentialArea */)
+            this.data._hexEconomy = 0.5 * (1 - this.data._hexResidentAwareness / 5) * (this.facilityLevel / 6) * this.data._hexPopulation / Arguments.populationBase;
+        else
+            this.data._hexEconomy = -0.5 * (1 - this.data._hexResidentAwareness / 5) * (this.facilityLevel / 6) * this.data._hexPopulation / Arguments.populationBase;
+        if (this.facilityType == 2 /* ResidentialArea */ || this.facilityType == 4 /* GeneralFactory */)
+            this.data._hexPopulation = Math.floor(this.data._hexPopulation * (1.1 - Math.sqrt(rawLv / 1.5) / 10));
+        else
+            this.data._hexPopulation = Math.floor(this.data._hexPopulation * (1.001 - Math.sqrt(rawLv / 1.5) / 1000));
         this.data._hexPollutionControl *= this.data._hexResidentAwareness;
-        this.data._hexResidentHealth -= Math.round(rawLv * Math.sqrt(staminaRatio) * 10) * 0.01;
+        this.data._hexResidentHealth -= Math.round(rawLv * Math.sqrt(staminaRatio) * 10) * 0.05;
+        this.data._hexRank = 0.06 * this.data._hexEconomy / this.data._hexPopulation + 0.045 * ((this.data._hexFacilityType == 4 /* GeneralFactory */ || this.data._hexFacilityType == 2 /* ResidentialArea */) ? this.data._hexFacilityLevel : 0) + 0.05 * (this.data._hexFacilityType == 1 /* Forest */ ? this.data._hexFacilityLevel / 6 : 0); // 森林覆盖率
         this.data._hexHasAction = false;
         this.elementRef.removeClass("has-action");
         return this.data._hexEconomy;
@@ -605,6 +614,7 @@ var WorldDevelopmentModel = (function () {
                     _hexPollutionControl: Arguments.hexInitialPollutionControl,
                     _hexPopulation: (template[row][col] + 1) * Arguments.populationBase + Helpers.randBetween(-Arguments.populationBase, Arguments.populationBase, true),
                     _hexLastPollution: 0,
+                    _hexRank: 0,
                     _hexHasAction: false
                 };
             }

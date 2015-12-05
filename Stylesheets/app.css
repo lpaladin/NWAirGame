@@ -355,6 +355,14 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
         border: 1px solid indianred;
     }
 
+#dStatusInfoOverlay > div > p.indigo > label {
+    background-color: indigo;
+}
+
+    #dStatusInfoOverlay > div > p.indigo > span {
+        border: 1px solid indigo;
+    }
+
 #dStatusInfoOverlay > div > p.deepskyblue > label {
     background-color: deepskyblue;
 }
@@ -515,7 +523,8 @@ text-shadow originated from: http://codepen.io/zitrusfrisch
 }
 
     .bkg3d-infinite.land {
-        background: linear-gradient(to bottom, white, lightgreen);
+        background: linear-gradient(to bottom, white, transparent),
+            url('/Images/LandBackground/City.jpg');
         -moz-transform: translateZ(-5px);
         -ms-transform: translateZ(-5px);
         -o-transform: translateZ(-5px);

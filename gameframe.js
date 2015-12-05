@@ -47,6 +47,7 @@ var GameFrame = (function () {
         if (GameFrame._init)
             throw "游戏框架被再次初始化！";
         GameFrame._init = true;
+        this.playingBGM = document.getElementById('bgmMenu1');
         mnuHex.append(new gui.MenuItem({
             label: "　" + Arguments.gameMapHexMenuActionName[GameMapHexMenuActions.Build],
             icon: "/Images/Icon/112_Plus_Green_16x16_72.png",
@@ -90,12 +91,14 @@ var GameFrame = (function () {
                 _hexResidentHealth: Arguments.residentMaxHealth,
                 _hexLastPollution: 0,
                 _hexPopulation: 0,
+                _hexRank: 0,
                 _hexHasAction: false
             }, $ele, $(), true);
         }
     }
     GameFrame.prototype.loadProgress = function (id) {
         var _this = this;
+        this.playSound('sndLongClick');
         this.pushMessage(0 /* Information */, "读取中，请稍候……");
         this.stateData = JSON.parse(fs.readFileSync("./UserData/save" + id + ".sav", "utf8"));
         this.logicModule = new WorldDevelopmentModel(this.stateData);
@@ -128,8 +131,10 @@ var GameFrame = (function () {
         var _this = this;
         if (fs.existsSync("./UserData/save" + id + ".sav"))
             this.showModal("警告", "将会覆盖存档，你要继续吗？", function (result) {
-                if (result)
+                if (result) {
+                    _this.playSound('sndLongClick');
                     _this._realSave(id, callback);
+                }
             });
         else
             this._realSave(id, callback);
@@ -168,6 +173,7 @@ var GameFrame = (function () {
             this.pushMessage(1 /* Warning */, "政府资金不足！");
             return;
         }
+        this.playSound('sndStrongEntry');
         this.loading = true;
         this.logicModule.nextTurn();
         this.updateVisual();
@@ -176,11 +182,12 @@ var GameFrame = (function () {
         ui.lstTurnActions.html("").hide();
         GameMapHex.selectedHex && (GameMapHex.selectedHex.selected = false);
         if (this.stateData._fund > 100000 && parseFloat(ui.sResidentAverageHealth.text()) >= 8)
-            this.showModal("游戏结束", "您已经达到了游戏目标！恭喜您做到了环境与发展的均衡！请问您是否要继续？", function (r) { return r && wnd.reload(); });
+            this.showModal("游戏结束", "您已经达到了游戏目标！恭喜您做到了环境与发展的均衡！请问您是否要继续？", function (r) { return !r && wnd.reload(); });
         setTimeout(function () { return _this.loading = false; }, Helpers.randBetween(1000, 2000, true));
     };
     GameFrame.prototype.hexMenuCall = function (type) {
         var _this = this;
+        this.playSound('sndShortCrisp');
         var currentHex = GameMapHex.selectedHex, cb;
         currentHex.inflateActionModal(ui.dlgActionModal.find(".hex-status"));
         switch (type) {
@@ -326,10 +333,13 @@ var GameFrame = (function () {
         var deltaDay = this.stateData._turnID;
         ui.sDate.text("" + ((this.stateData._beginDay.month + Math.floor(deltaDay / 30)) % 12 + 1) + "月 " + ((this.stateData._beginDay.day + deltaDay) % 30 + 1) + "日");
         ui.sGovernmentFund.text(this.stateData._fund);
-        var healthSum = 0;
+        var rankSum = 0, healthSum = 0;
         for (var i = 0; i < this.stateData.gameMap._mapHeight; i++)
-            for (var j = 0; j < this.stateData.gameMap._mapWidth; j++)
+            for (var j = 0; j < this.stateData.gameMap._mapWidth; j++) {
+                rankSum += this.stateData.gameMap.map[i][j]._hexRank;
                 healthSum += this.stateData.gameMap.map[i][j]._hexResidentHealth;
+            }
+        ui.sRate.text(Math.floor(rankSum * 1000));
         ui.sResidentAverageHealth.text((Math.round(healthSum * 100 / this.stateData.gameMap._mapHeight / this.stateData.gameMap._mapWidth) / 100) + " / " + Arguments.residentMaxHealth);
         ui.lstTurnActions.html("");
         if (this.stateData.actions.length > 0) {
@@ -375,6 +385,7 @@ var GameFrame = (function () {
             }
     };
     GameFrame.prototype.newGame = function (typeid) {
+        this.playSound('sndLongClick');
         var types = [{ width: 7, height: 7 }, { width: 10, height: 10 }, { width: 15, height: 15 }];
         ui.dlgMapSizeSelect.fadeOut();
         this.initMap(types[typeid].height, types[typeid].width);
@@ -400,7 +411,7 @@ var GameFrame = (function () {
             case "loadGame":
                 // 遍历存档文件夹
                 var paths = fs.readdirSync("./UserData/"), slots = [];
-                ui.lstSaveProgress.html("");
+                ui.lstLoadProgress.html("");
                 for (var i = 0; i < paths.length; i++) {
                     var name = paths[i].match(/save([0-9]*)\.sav$/);
                     if (name)
@@ -459,6 +470,7 @@ var GameFrame = (function () {
         }, 2000);
     };
     GameFrame.prototype.showDialog = function (ele) {
+        this.playSound('sndPop');
         TweenMax.fromTo(_$(ele.show()).center(), 0.5, {
             transformPerspective: 600,
             rotationX: 90,
@@ -567,6 +579,18 @@ var GameFrame = (function () {
         enumerable: true,
         configurable: true
     });
+    GameFrame.prototype.switchBGM = function (to, reset) {
+        this.playingBGM.pause();
+        if (reset)
+            this.playingBGM.currentTime = 0;
+        this.playingBGM = document.getElementById(to);
+        this.playingBGM.play();
+    };
+    GameFrame.prototype.playSound = function (id) {
+        var audio = document.getElementById(id);
+        audio.currentTime = 0;
+        audio.play();
+    };
     return GameFrame;
 })();
 //#endregion
@@ -616,6 +640,7 @@ function UISceneAnimationDefinitions() {
     }, false);
     uiScenes.sGameMain = new UIScene(ui.dGameMain, function (main, argu) {
         var tl = new TimelineMax();
+        frame.switchBGM('bgmInGame1', false);
         if (argu && argu.isPause == true)
             return tl;
         main.show();
@@ -627,6 +652,7 @@ function UISceneAnimationDefinitions() {
         return tl;
     }, function (main, argu) {
         var tl = new TimelineMax();
+        frame.switchBGM('bgmMenu1', false);
         if (argu && argu.isPause == true)
             return tl;
         tl.fromTo(ui.dStatusInfo, 0.5, { width: 0 }, { width: "25vw", ease: Circ.easeIn }).fromTo(main, 0.5, { opacity: 1 }, { opacity: 0 }, 0).call(function () { return main.hide(); });
@@ -683,7 +709,7 @@ $(document).ready(function () {
     }).on("click", "ul.single-select li", function () {
         var $this = $(this);
         $this.addClass("active").siblings(".active").removeClass("active");
-    });
+    }).on('mouseover', '.hl-style-menu > li, button.classic', function () { return frame.playSound('sndClick'); }).on('mousedown', 'button.classic', function () { return frame.playSound('sndSelect'); }).on('click', '.hexagon', function () { return frame.playSound('sndLight'); });
     // 窗口关闭阻止
     var closing = false;
     wnd.on('close', function () {
